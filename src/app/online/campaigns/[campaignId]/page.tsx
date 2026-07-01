@@ -42,6 +42,13 @@ type OnlineCharacter = {
   updated_at: string;
 };
 
+type CampaignMember = {
+  user_id: string;
+  display_name: string;
+  role: "owner" | "game_master" | "player";
+  created_at: string;
+};
+
 type DiceRoll = {
   id: string;
   campaign_id: string;
@@ -93,6 +100,30 @@ function formatDate(dateText: string) {
   });
 }
 
+function getRoleLabel(role: CampaignMember["role"]) {
+  if (role === "owner") {
+    return "Właściciel kampanii";
+  }
+
+  if (role === "game_master") {
+    return "Game Master";
+  }
+
+  return "Gracz";
+}
+
+function getRoleClass(role: CampaignMember["role"]) {
+  if (role === "owner") {
+    return "border-red-700 bg-red-950/40 text-red-300";
+  }
+
+  if (role === "game_master") {
+    return "border-yellow-700 bg-yellow-950/30 text-yellow-300";
+  }
+
+  return "border-neutral-700 bg-neutral-950 text-neutral-300";
+}
+
 export default function OnlineCampaignLobbyPage() {
   const params = useParams();
   const router = useRouter();
@@ -101,6 +132,7 @@ export default function OnlineCampaignLobbyPage() {
 
   const [campaign, setCampaign] = useState<OnlineCampaign | null>(null);
   const [characters, setCharacters] = useState<OnlineCharacter[]>([]);
+  const [members, setMembers] = useState<CampaignMember[]>([]);
   const [diceRolls, setDiceRolls] = useState<DiceRoll[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -115,12 +147,23 @@ export default function OnlineCampaignLobbyPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingCharacter, setIsCreatingCharacter] = useState(false);
   const [isRolling, setIsRolling] = useState(false);
+  const [isChangingRole, setIsChangingRole] = useState(false);
 
   const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
 
   const isCampaignOwner = Boolean(
     campaign && userId && campaign.owner_id === userId,
   );
+
+  const currentMember = useMemo(() => {
+    if (!userId) {
+      return null;
+    }
+
+    return members.find((member) => member.user_id === userId) ?? null;
+  }, [members, userId]);
+
+  const isGameMaster = currentMember?.role === "game_master";
 
   const myCharacters = useMemo(() => {
     if (!userId) {
@@ -146,6 +189,22 @@ export default function OnlineCampaignLobbyPage() {
     return myCharacters;
   }, [characters, myCharacters, isCampaignOwner]);
 
+  async function loadCampaignMembers() {
+    const supabase = createClient();
+
+    const { data, error } = await supabase.rpc("get_campaign_members", {
+      campaign_id_to_check: campaignId,
+    });
+
+    if (error) {
+      setMembers([]);
+      setStatus(`Nie udało się pobrać członków kampanii: ${error.message}`);
+      return;
+    }
+
+    setMembers((data ?? []) as CampaignMember[]);
+  }
+
   async function loadCampaignLobby() {
     setIsLoading(true);
     setStatus("Ładuję lobby kampanii...");
@@ -158,6 +217,7 @@ export default function OnlineCampaignLobbyPage() {
       setUserId(null);
       setCampaign(null);
       setCharacters([]);
+      setMembers([]);
       setDiceRolls([]);
       setStatus("Musisz być zalogowany, żeby otworzyć kampanię online.");
       setIsLoading(false);
@@ -175,6 +235,7 @@ export default function OnlineCampaignLobbyPage() {
     if (campaignError || !campaignData) {
       setCampaign(null);
       setCharacters([]);
+      setMembers([]);
       setStatus(
         `Nie udało się pobrać kampanii: ${
           campaignError?.message ?? "brak danych"
@@ -182,6 +243,19 @@ export default function OnlineCampaignLobbyPage() {
       );
       setIsLoading(false);
       return;
+    }
+
+    const { data: memberData, error: memberError } = await supabase.rpc(
+      "get_campaign_members",
+      {
+        campaign_id_to_check: campaignId,
+      },
+    );
+
+    if (memberError) {
+      setMembers([]);
+    } else {
+      setMembers((memberData ?? []) as CampaignMember[]);
     }
 
     const { data: characterData, error: characterError } = await supabase
@@ -225,7 +299,12 @@ export default function OnlineCampaignLobbyPage() {
 
     setSelectedCharacterId(firstPlayableCharacter?.id ?? "");
 
-    setStatus("Lobby kampanii zostało wczytane.");
+    setStatus(
+      memberError
+        ? `Lobby wczytane, ale nie udało się pobrać członków: ${memberError.message}`
+        : "Lobby kampanii zostało wczytane.",
+    );
+
     setIsLoading(false);
   }
 
@@ -329,6 +408,51 @@ export default function OnlineCampaignLobbyPage() {
       void supabase.removeChannel(channel);
     };
   }, [campaignId]);
+
+  async function changeCampaignMemberRole(
+    memberUserId: string,
+    newRole: "player" | "game_master",
+  ) {
+    if (!isCampaignOwner) {
+      setStatus("Tylko właściciel kampanii może zmieniać role.");
+      return;
+    }
+
+    setIsChangingRole(true);
+    setStatus("Zmieniam rolę członka kampanii...");
+
+    const supabase = createClient();
+
+    const { error } = await supabase.rpc("set_campaign_member_role", {
+      campaign_id_to_update: campaignId,
+      user_id_to_update: memberUserId,
+      new_role: newRole,
+    });
+
+    if (error) {
+      setStatus(`Nie udało się zmienić roli: ${error.message}`);
+      setIsChangingRole(false);
+      return;
+    }
+
+    setMembers((currentMembers) =>
+      currentMembers.map((member) => {
+        if (member.user_id !== memberUserId) {
+          return member;
+        }
+
+        return {
+          ...member,
+          role: newRole,
+        };
+      }),
+    );
+
+    setStatus("Rola członka kampanii została zmieniona.");
+    setIsChangingRole(false);
+
+    await loadCampaignMembers();
+  }
 
   async function createOnlineCharacter() {
     if (!userId) {
@@ -566,6 +690,12 @@ export default function OnlineCampaignLobbyPage() {
                   Brak opisu kampanii.
                 </p>
               )}
+
+              {isGameMaster ? (
+                <p className="mt-4 inline-block rounded-lg border border-yellow-700 bg-yellow-950/30 px-3 py-2 text-sm font-semibold text-yellow-300">
+                  Masz rolę Game Mastera w tej kampanii.
+                </p>
+              ) : null}
             </div>
 
             <AuthPanel />
@@ -642,6 +772,104 @@ export default function OnlineCampaignLobbyPage() {
         <section className="mt-6 rounded-2xl border border-neutral-700 bg-neutral-900 p-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
+              <h2 className="text-2xl font-bold">Członkowie kampanii</h2>
+
+              <p className="mt-1 text-sm text-neutral-400">
+                Rola Game Mastera działa tylko w tej kampanii. To nie jest admin
+                aplikacji.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void loadCampaignMembers()}
+              className="rounded-lg border border-neutral-700 px-4 py-2 text-sm font-semibold text-neutral-300 hover:border-neutral-500"
+            >
+              Odśwież członków
+            </button>
+          </div>
+
+          {members.length === 0 ? (
+            <p className="mt-5 rounded-xl border border-dashed border-neutral-700 p-6 text-center text-neutral-400">
+              Nie udało się wczytać członków kampanii albo nie ma ich jeszcze na
+              liście.
+            </p>
+          ) : (
+            <div className="mt-5 grid gap-3">
+              {members.map((member) => {
+                const canChangeThisMember =
+                  isCampaignOwner &&
+                  member.user_id !== userId &&
+                  member.role !== "owner";
+
+                return (
+                  <article
+                    key={member.user_id}
+                    className="rounded-xl border border-neutral-700 bg-neutral-800 p-4"
+                  >
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <p className="text-lg font-bold">
+                          {member.display_name || "Bez nazwy"}
+                        </p>
+
+                        <p className="mt-1 text-xs text-neutral-500">
+                          Dołączył: {formatDate(member.created_at)}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`rounded-lg border px-3 py-2 text-sm font-semibold ${getRoleClass(
+                            member.role,
+                          )}`}
+                        >
+                          {getRoleLabel(member.role)}
+                        </span>
+
+                        {canChangeThisMember ? (
+                          member.role === "game_master" ? (
+                            <button
+                              type="button"
+                              disabled={isChangingRole}
+                              onClick={() =>
+                                changeCampaignMemberRole(
+                                  member.user_id,
+                                  "player",
+                                )
+                              }
+                              className="rounded-lg border border-neutral-600 px-3 py-2 text-sm font-semibold text-neutral-300 disabled:text-neutral-600"
+                            >
+                              Zmień na gracza
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={isChangingRole}
+                              onClick={() =>
+                                changeCampaignMemberRole(
+                                  member.user_id,
+                                  "game_master",
+                                )
+                              }
+                              className="rounded-lg border border-yellow-700 px-3 py-2 text-sm font-semibold text-yellow-300 disabled:text-neutral-600"
+                            >
+                              Nadaj Game Mastera
+                            </button>
+                          )
+                        ) : null}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-neutral-700 bg-neutral-900 p-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
               <h2 className="text-2xl font-bold">Twoje postacie</h2>
 
               <p className="mt-1 text-sm text-neutral-400">
@@ -697,7 +925,8 @@ export default function OnlineCampaignLobbyPage() {
           <h2 className="text-2xl font-bold">Postacie w kampanii</h2>
 
           <p className="mt-1 text-sm text-neutral-400">
-            Lista wszystkich widocznych postaci w tej kampanii.
+            Właściciel kampanii i Game Master widzą wszystkie postacie. Zwykły
+            gracz widzi głównie swoje postacie.
           </p>
 
           {characters.length === 0 ? (
@@ -721,7 +950,8 @@ export default function OnlineCampaignLobbyPage() {
 
               {otherCharacters.length === 0 ? (
                 <p className="rounded-xl border border-neutral-700 bg-neutral-950 p-5 text-neutral-400">
-                  Nie ma jeszcze postaci innych graczy.
+                  Nie ma jeszcze postaci innych graczy albo nie masz uprawnień,
+                  żeby je widzieć.
                 </p>
               ) : null}
             </div>
