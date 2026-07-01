@@ -2094,15 +2094,11 @@ export default function CampaignPlayPage() {
           </div>
         </header>
 
-        <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          <p className="rounded-xl border border-neutral-700 bg-neutral-900 p-3 text-sm text-red-500">
+        {status ? (
+          <p className="mt-4 rounded-xl border border-neutral-700 bg-neutral-900 p-3 text-sm text-red-500">
             {status}
           </p>
-
-          <p className="rounded-xl border border-neutral-700 bg-neutral-900 p-3 text-sm text-neutral-400">
-            {realtimeStatus}
-          </p>
-        </div>
+        ) : null}
 
         <section className="mt-6 grid gap-6 xl:h-[calc(100vh-2rem)] xl:grid-cols-[clamp(260px,35vw,800px)_minmax(0,1fr)] xl:items-stretch">
           <div className="grid min-h-0 gap-4 xl:h-full xl:grid-rows-[auto_minmax(0,1fr)]">

@@ -972,15 +972,11 @@ export default function OnlineCampaignLobbyPage() {
           </div>
         </header>
 
-        <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          <p className="rounded-xl border border-neutral-700 bg-neutral-900 p-3 text-sm text-red-400">
+        {status ? (
+          <p className="mt-4 rounded-xl border border-neutral-700 bg-neutral-900 p-3 text-sm text-red-400">
             {status}
           </p>
-
-          <p className="rounded-xl border border-neutral-700 bg-neutral-900 p-3 text-sm text-neutral-400">
-            {realtimeStatus}
-          </p>
-        </div>
+        ) : null}
 
         <section className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
           <article className="rounded-2xl border border-red-950 bg-red-950/20 p-6">
