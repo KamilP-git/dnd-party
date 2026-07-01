@@ -133,6 +133,10 @@ export default function OnlineCampaignLobbyPage() {
   const [campaign, setCampaign] = useState<OnlineCampaign | null>(null);
   const [characters, setCharacters] = useState<OnlineCharacter[]>([]);
   const [members, setMembers] = useState<CampaignMember[]>([]);
+  const [campaignName, setCampaignName] = useState("");
+  const [campaignDescription, setCampaignDescription] = useState("");
+  const [campaignNotes, setCampaignNotes] = useState("");
+  const [isSavingCampaign, setIsSavingCampaign] = useState(false);
   const [diceRolls, setDiceRolls] = useState<DiceRoll[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -292,6 +296,9 @@ export default function OnlineCampaignLobbyPage() {
 
     setCampaign(campaignData as OnlineCampaign);
     setCharacters(loadedCharacters);
+    setCampaignName(campaignData.name ?? "");
+    setCampaignDescription(campaignData.description ?? "");
+    setCampaignNotes(campaignData.notes ?? "");
 
     const isOwner = campaignData.owner_id === userData.user.id;
     const firstPlayableCharacter = isOwner
@@ -585,7 +592,62 @@ export default function OnlineCampaignLobbyPage() {
 
     await loadCampaignMembers();
   }
+  async function saveCampaignDetails(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
+    if (!campaign) {
+      setStatus("Nie wczytano kampanii.");
+      return;
+    }
+
+    if (!isCampaignOwner) {
+      setStatus("Tylko właściciel kampanii może edytować kampanię.");
+      return;
+    }
+
+    const cleanedName = campaignName.trim();
+    const cleanedDescription = campaignDescription.trim();
+    const cleanedNotes = campaignNotes.trim();
+
+    if (!cleanedName) {
+      setStatus("Nazwa kampanii nie może być pusta.");
+      return;
+    }
+
+    setIsSavingCampaign(true);
+    setStatus("Zapisuję dane kampanii...");
+
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+      .from("campaigns")
+      .update({
+        name: cleanedName,
+        description: cleanedDescription,
+        notes: cleanedNotes,
+      })
+      .eq("id", campaignId)
+      .select("*")
+      .single();
+
+    if (error || !data) {
+      setStatus(
+        `Nie udało się zapisać kampanii: ${
+          error?.message ?? "brak danych po zapisie"
+        }`,
+      );
+      setIsSavingCampaign(false);
+      return;
+    }
+
+    setCampaign(data as OnlineCampaign);
+    setCampaignName(data.name ?? "");
+    setCampaignDescription(data.description ?? "");
+    setCampaignNotes(data.notes ?? "");
+
+    setStatus("Dane kampanii zostały zapisane.");
+    setIsSavingCampaign(false);
+  }
   async function createOnlineCharacter() {
     if (!userId) {
       setStatus("Musisz być zalogowany, żeby stworzyć postać.");
@@ -1034,7 +1096,62 @@ export default function OnlineCampaignLobbyPage() {
             )}
           </article>
         </section>
+        {isCampaignOwner ? (
+          <section className="mt-6 rounded-2xl border border-neutral-700 bg-neutral-900 p-6">
+            <div>
+              <h2 className="text-2xl font-bold">Ustawienia kampanii</h2>
 
+              <p className="mt-1 text-sm text-neutral-400">
+                Tylko właściciel kampanii może zmieniać nazwę, opis i notatki
+                kampanii.
+              </p>
+            </div>
+
+            <form onSubmit={saveCampaignDetails} className="mt-5 grid gap-4">
+              <label className="grid gap-1 text-sm">
+                Nazwa kampanii
+                <input
+                  value={campaignName}
+                  onChange={(event) => setCampaignName(event.target.value)}
+                  placeholder="np. Klątwa Czarnego Lasu"
+                  className="rounded-lg border border-neutral-700 bg-neutral-800 p-3 text-white caret-white outline-none focus:border-red-700"
+                />
+              </label>
+
+              <label className="grid gap-1 text-sm">
+                Opis kampanii
+                <textarea
+                  value={campaignDescription}
+                  onChange={(event) =>
+                    setCampaignDescription(event.target.value)
+                  }
+                  placeholder="Krótki opis kampanii widoczny dla graczy."
+                  rows={4}
+                  className="rounded-lg border border-neutral-700 bg-neutral-800 p-3 text-white caret-white outline-none focus:border-red-700"
+                />
+              </label>
+
+              <label className="grid gap-1 text-sm">
+                Notatki kampanii
+                <textarea
+                  value={campaignNotes}
+                  onChange={(event) => setCampaignNotes(event.target.value)}
+                  placeholder="Prywatne / organizacyjne notatki kampanii."
+                  rows={5}
+                  className="rounded-lg border border-neutral-700 bg-neutral-800 p-3 text-white caret-white outline-none focus:border-red-700"
+                />
+              </label>
+
+              <button
+                type="submit"
+                disabled={isSavingCampaign}
+                className="rounded-lg border border-red-700 px-4 py-2 font-semibold text-red-500 disabled:cursor-not-allowed disabled:border-neutral-700 disabled:text-neutral-600"
+              >
+                {isSavingCampaign ? "Zapisuję..." : "Zapisz dane kampanii"}
+              </button>
+            </form>
+          </section>
+        ) : null}
         <section className="mt-6 rounded-2xl border border-neutral-700 bg-neutral-900 p-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
