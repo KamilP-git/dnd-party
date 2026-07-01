@@ -783,6 +783,11 @@ export default function CampaignPlayPage() {
   function addCharacterResource(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!canEdit) {
+      setStatus("Tryb podglądu: nie masz uprawnień do edycji tej postaci.");
+      return;
+    }
+
     if (!character) {
       return;
     }
@@ -1004,6 +1009,11 @@ export default function CampaignPlayPage() {
   function addInventoryItem(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!canEdit) {
+      setStatus("Tryb podglądu: nie masz uprawnień do edycji tej postaci.");
+      return;
+    }
+
     if (!character) {
       return;
     }
@@ -1106,6 +1116,11 @@ export default function CampaignPlayPage() {
   function addAttackSpell(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!canEdit) {
+      setStatus("Tryb podglądu: nie masz uprawnień do edycji tej postaci.");
+      return;
+    }
+
     if (!character) {
       return;
     }
@@ -1186,6 +1201,11 @@ export default function CampaignPlayPage() {
   function addClassFeature(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!canEdit) {
+      setStatus("Tryb podglądu: nie masz uprawnień do edycji tej postaci.");
+      return;
+    }
+
     if (!character) {
       return;
     }
@@ -1261,6 +1281,11 @@ export default function CampaignPlayPage() {
 
   function addOtherTrait(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!canEdit) {
+      setStatus("Tryb podglądu: nie masz uprawnień do edycji tej postaci.");
+      return;
+    }
 
     if (!character) {
       return;
@@ -2365,444 +2390,1144 @@ export default function CampaignPlayPage() {
               </button>
             </nav>
 
-            {characterTab === "general" ? (
-              <div className="mt-6 grid gap-6">
-                <section className="grid gap-6 rounded-xl border border-neutral-700 bg-neutral-800 p-5 xl:grid-cols-[minmax(0,1fr)_clamp(260px,28vw,420px)]">
-                  <div className="min-w-0">
-                    <h3 className="text-2xl font-bold">Dane postaci</h3>
+            {!canEdit ? (
+              <div className="mt-6 rounded-xl border border-yellow-700 bg-yellow-950/30 p-4 text-sm text-yellow-200">
+                <p className="font-bold">Tryb podglądu</p>
 
-                    <div className="mt-4 grid gap-4 md:grid-cols-2">
-                      <div>
+                <p className="mt-1 text-yellow-100/80">
+                  Możesz oglądać tę kartę postaci, ale nie masz uprawnień do
+                  edycji. Edytować może właściciel postaci albo właściciel
+                  kampanii.
+                </p>
+              </div>
+            ) : null}
+
+            <div
+              className={
+                canEdit ? "" : "pointer-events-none select-text opacity-90"
+              }
+              aria-disabled={!canEdit}
+            >
+              {characterTab === "general" ? (
+                <div className="mt-6 grid gap-6">
+                  <section className="grid gap-6 rounded-xl border border-neutral-700 bg-neutral-800 p-5 xl:grid-cols-[minmax(0,1fr)_clamp(260px,28vw,420px)]">
+                    <div className="min-w-0">
+                      <h3 className="text-2xl font-bold">Dane postaci</h3>
+
+                      <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        <div>
+                          <p className="text-sm font-semibold text-neutral-400">
+                            Imię postaci
+                          </p>
+
+                          <EditableText
+                            value={character.name}
+                            onSave={(value) =>
+                              updateCharacterTextField("name", value)
+                            }
+                            className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-left"
+                            inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-3"
+                          />
+                        </div>
+
+                        <div>
+                          <p className="text-sm font-semibold text-neutral-400">
+                            Poziom
+                          </p>
+
+                          <EditableNumber
+                            value={character.level}
+                            min={1}
+                            onSave={(value) =>
+                              updateCharacterField("level", value)
+                            }
+                            className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-center text-lg font-bold"
+                            inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-3 text-center text-lg font-bold"
+                          />
+                        </div>
+
+                        <div>
+                          <p className="text-sm font-semibold text-neutral-400">
+                            Rasa / pochodzenie
+                          </p>
+
+                          <EditableText
+                            value={character.race || ""}
+                            placeholder="Brak"
+                            onSave={(value) =>
+                              updateCharacterTextField("race", value)
+                            }
+                            className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-left"
+                            inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-3"
+                          />
+                        </div>
+
+                        <div>
+                          <p className="text-sm font-semibold text-neutral-400">
+                            Klasa postaci
+                          </p>
+
+                          <EditableText
+                            value={character.className}
+                            onSave={(value) =>
+                              updateCharacterTextField("className", value)
+                            }
+                            className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-left"
+                            inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-3"
+                          />
+                        </div>
+
+                        <div>
+                          <p className="text-sm font-semibold text-neutral-400">
+                            Gracz
+                          </p>
+
+                          <EditableText
+                            value={character.playerName || ""}
+                            placeholder="Brak"
+                            onSave={(value) =>
+                              updateCharacterTextField("playerName", value)
+                            }
+                            className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-left"
+                            inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-3"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
                         <p className="text-sm font-semibold text-neutral-400">
-                          Imię postaci
+                          Historia / opis postaci
                         </p>
 
                         <EditableText
-                          value={character.name}
+                          value={character.description || ""}
+                          placeholder="Brak opisu."
+                          multiline
                           onSave={(value) =>
-                            updateCharacterTextField("name", value)
+                            updateCharacterTextField("description", value)
                           }
-                          className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-left"
-                          inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-3"
-                        />
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-semibold text-neutral-400">
-                          Poziom
-                        </p>
-
-                        <EditableNumber
-                          value={character.level}
-                          min={1}
-                          onSave={(value) =>
-                            updateCharacterField("level", value)
-                          }
-                          className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-center text-lg font-bold"
-                          inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-3 text-center text-lg font-bold"
-                        />
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-semibold text-neutral-400">
-                          Rasa / pochodzenie
-                        </p>
-
-                        <EditableText
-                          value={character.race || ""}
-                          placeholder="Brak"
-                          onSave={(value) =>
-                            updateCharacterTextField("race", value)
-                          }
-                          className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-left"
-                          inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-3"
-                        />
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-semibold text-neutral-400">
-                          Klasa postaci
-                        </p>
-
-                        <EditableText
-                          value={character.className}
-                          onSave={(value) =>
-                            updateCharacterTextField("className", value)
-                          }
-                          className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-left"
-                          inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-3"
-                        />
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-semibold text-neutral-400">
-                          Gracz
-                        </p>
-
-                        <EditableText
-                          value={character.playerName || ""}
-                          placeholder="Brak"
-                          onSave={(value) =>
-                            updateCharacterTextField("playerName", value)
-                          }
-                          className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-left"
-                          inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-3"
+                          className="mt-1 block min-h-32 w-full whitespace-pre-wrap rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-left"
+                          inputClassName="mt-1 min-h-32 w-full rounded-lg border border-red-700 bg-neutral-900 p-3"
                         />
                       </div>
                     </div>
 
-                    <div className="mt-4">
-                      <p className="text-sm font-semibold text-neutral-400">
-                        Historia / opis postaci
+                    <section className="rounded-xl border border-neutral-700 bg-neutral-900 p-5">
+                      <h3 className="text-xl font-bold">Portret postaci</h3>
+
+                      <div
+                        onContextMenu={(event) => {
+                          event.preventDefault();
+
+                          if (!canEdit) {
+                            return;
+                          }
+
+                          setImagePickerTarget({ type: "portrait" });
+                        }}
+                        title={
+                          canEdit
+                            ? "Kliknij prawym przyciskiem myszy, aby zmienić portret"
+                            : "Nie masz uprawnień do edycji portretu"
+                        }
+                        className="mt-4 overflow-hidden rounded-xl border border-neutral-700 bg-neutral-950"
+                      >
+                        {character.portraitUrl ? (
+                          <img
+                            src={character.portraitUrl}
+                            alt={`Portret postaci ${character.name}`}
+                            className="aspect-[3/4] w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex aspect-[3/4] items-center justify-center bg-neutral-950 text-7xl">
+                            🧙
+                          </div>
+                        )}
+                      </div>
+
+                      <p className="mt-3 text-center text-xs text-neutral-500">
+                        {canEdit
+                          ? "Prawy klik: zmień portret"
+                          : "Tryb podglądu: portret jest tylko do odczytu"}
                       </p>
+                    </section>
+                  </section>
 
-                      <EditableText
-                        value={character.description || ""}
-                        placeholder="Brak opisu."
-                        multiline
-                        onSave={(value) =>
-                          updateCharacterTextField("description", value)
-                        }
-                        className="mt-1 block min-h-32 w-full whitespace-pre-wrap rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-left"
-                        inputClassName="mt-1 min-h-32 w-full rounded-lg border border-red-700 bg-neutral-900 p-3"
-                      />
+                  <section className="rounded-xl border border-neutral-700 bg-neutral-800 p-5">
+                    <h3 className="text-center text-2xl font-bold">
+                      Mechanika
+                    </h3>
+
+                    <div className="mt-5 grid gap-4 md:grid-cols-3">
+                      <article className="rounded-xl border border-neutral-700 bg-neutral-900 p-5 text-center">
+                        <p className="text-6xl">🛡️</p>
+
+                        <div className="mt-4 flex justify-center">
+                          <EditableNumber
+                            value={character.armorClass}
+                            min={0}
+                            onSave={(value) =>
+                              updateCharacterField("armorClass", value)
+                            }
+                            className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
+                            inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
+                          />
+                        </div>
+
+                        <p className="mt-2 text-sm font-bold uppercase text-neutral-400">
+                          Klasa pancerza
+                        </p>
+                      </article>
+
+                      <article className="rounded-xl border border-neutral-700 bg-neutral-900 p-5 text-center">
+                        <p className="text-6xl">⏱️</p>
+
+                        <div className="mt-4 flex justify-center">
+                          <EditableNumber
+                            value={initiative}
+                            min={-20}
+                            max={50}
+                            formatValue={formatModifier}
+                            onSave={(value) =>
+                              updateCharacterField("initiative", value)
+                            }
+                            className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
+                            inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
+                          />
+                        </div>
+
+                        <p className="mt-2 text-sm font-bold uppercase text-neutral-400">
+                          Inicjatywa
+                        </p>
+                      </article>
+
+                      <article className="rounded-xl border border-neutral-700 bg-neutral-900 p-5 text-center">
+                        <p className="text-6xl">🥾</p>
+
+                        <div className="mt-4 flex justify-center">
+                          <EditableNumber
+                            value={speed}
+                            min={0}
+                            onSave={(value) =>
+                              updateCharacterField("speed", value)
+                            }
+                            className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
+                            inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
+                          />
+                        </div>
+
+                        <p className="mt-2 text-sm font-bold uppercase text-neutral-400">
+                          Szybkość
+                        </p>
+                      </article>
                     </div>
-                  </div>
+                  </section>
 
-                  <section className="rounded-xl border border-neutral-700 bg-neutral-900 p-5">
-                    <h3 className="text-xl font-bold">Portret postaci</h3>
+                  <section className="rounded-xl border border-neutral-700 bg-neutral-800 p-5">
+                    <h3 className="text-center text-2xl font-bold">Życie</h3>
 
-                    <div
-                      onContextMenu={(event) => {
-                        event.preventDefault();
+                    <div className="mt-5 grid gap-4 md:grid-cols-4">
+                      <article className="rounded-xl border border-neutral-700 bg-neutral-900 p-5 text-center">
+                        <p className="text-6xl">❤️</p>
 
-                        if (!canEdit) {
-                          return;
-                        }
+                        <div className="mt-4 flex justify-center">
+                          <EditableNumber
+                            value={currentHp}
+                            min={0}
+                            onSave={(value) =>
+                              updateCharacterField("hp", value)
+                            }
+                            className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
+                            inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
+                          />
+                        </div>
 
-                        setImagePickerTarget({ type: "portrait" });
-                      }}
-                      title={
-                        canEdit
-                          ? "Kliknij prawym przyciskiem myszy, aby zmienić portret"
-                          : "Nie masz uprawnień do edycji portretu"
-                      }
-                      className="mt-4 overflow-hidden rounded-xl border border-neutral-700 bg-neutral-950"
+                        <p className="mt-2 text-sm font-bold uppercase text-neutral-400">
+                          Obecne HP
+                        </p>
+                      </article>
+
+                      <article className="rounded-xl border border-neutral-700 bg-neutral-900 p-5 text-center">
+                        <p className="text-6xl">🤍</p>
+
+                        <div className="mt-4 flex justify-center">
+                          <EditableNumber
+                            value={temporaryHp}
+                            min={0}
+                            onSave={(value) =>
+                              updateCharacterField("temporaryHp", value)
+                            }
+                            className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
+                            inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
+                          />
+                        </div>
+
+                        <p className="mt-2 text-sm font-bold uppercase text-neutral-400">
+                          Tym. HP
+                        </p>
+                      </article>
+
+                      <article className="rounded-xl border border-neutral-700 bg-neutral-900 p-5 text-center">
+                        <p className="text-6xl">💗</p>
+
+                        <div className="mt-4 flex justify-center">
+                          <EditableNumber
+                            value={maxHp}
+                            min={0}
+                            onSave={(value) =>
+                              updateCharacterField("maxHp", value)
+                            }
+                            className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
+                            inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
+                          />
+                        </div>
+
+                        <p className="mt-2 text-sm font-bold uppercase text-neutral-400">
+                          Maks HP
+                        </p>
+                      </article>
+
+                      <article className="rounded-xl border border-neutral-700 bg-neutral-900 p-5 text-center">
+                        <p className="text-6xl">🎲</p>
+
+                        <div className="mt-4 flex justify-center">
+                          <EditableNumber
+                            value={hitDice}
+                            min={0}
+                            onSave={(value) =>
+                              updateCharacterField("hitDice", value)
+                            }
+                            className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
+                            inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
+                          />
+                        </div>
+
+                        <p className="mt-2 text-sm font-bold uppercase text-neutral-400">
+                          Kości trafień
+                        </p>
+                      </article>
+                    </div>
+                  </section>
+
+                  <section className="rounded-xl border border-neutral-700 bg-neutral-800 p-5">
+                    <h3 className="text-center text-2xl font-bold">
+                      Ochrona przed śmiercią
+                    </h3>
+
+                    <div className="mt-5 grid gap-5">
+                      <div className="flex items-center justify-center gap-4">
+                        <div className="w-28 text-right font-bold uppercase text-neutral-300">
+                          🪽 Sukcesy
+                        </div>
+
+                        <div className="flex gap-3">
+                          {[1, 2, 3].map((slot) => (
+                            <button
+                              key={`death-success-${slot}`}
+                              type="button"
+                              onClick={() =>
+                                updateCharacterField(
+                                  "deathSaveSuccesses",
+                                  deathSaveSuccesses === slot ? slot - 1 : slot,
+                                )
+                              }
+                              className={`h-9 w-9 rounded-lg border ${
+                                deathSaveSuccesses >= slot
+                                  ? "border-red-700 bg-red-950 text-red-200"
+                                  : "border-neutral-600 bg-neutral-900"
+                              }`}
+                              title={`Sukces ${slot}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-center gap-4">
+                        <div className="w-28 text-right font-bold uppercase text-neutral-300">
+                          💀 Porażki
+                        </div>
+
+                        <div className="flex gap-3">
+                          {[1, 2, 3].map((slot) => (
+                            <button
+                              key={`death-failure-${slot}`}
+                              type="button"
+                              onClick={() =>
+                                updateCharacterField(
+                                  "deathSaveFailures",
+                                  deathSaveFailures === slot ? slot - 1 : slot,
+                                )
+                              }
+                              className={`h-9 w-9 rounded-lg border ${
+                                deathSaveFailures >= slot
+                                  ? "border-red-700 bg-red-950 text-red-200"
+                                  : "border-neutral-600 bg-neutral-900"
+                              }`}
+                              title={`Porażka ${slot}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="rounded-xl border border-neutral-700 bg-neutral-800 p-5">
+                    <h3 className="text-center text-2xl font-bold">
+                      Zasoby postaci
+                    </h3>
+
+                    <p className="mt-1 text-center text-sm text-neutral-400">
+                      Dowolne zasoby postaci. Wpisz samą liczbę, np. 37, jeśli
+                      zasób nie ma limitu. Wpisz 3 / 5, jeśli zasób ma limit
+                      górny, który potem można osobno edytować.
+                    </p>
+
+                    <form
+                      onSubmit={addCharacterResource}
+                      className="mt-5 grid gap-2 rounded-xl border border-neutral-700 bg-neutral-900 p-3 xl:grid-cols-[1fr_1fr_auto]"
                     >
-                      {character.portraitUrl ? (
-                        <img
-                          src={character.portraitUrl}
-                          alt={`Portret postaci ${character.name}`}
-                          className="aspect-[3/4] w-full object-cover"
-                        />
+                      <input
+                        name="resourceName"
+                        required
+                        placeholder="Nazwa, np. Dusze"
+                        className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
+                      />
+
+                      <input
+                        name="resourceValue"
+                        placeholder="Wartość, np. 37 albo 3 / 5"
+                        className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
+                      />
+
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-red-700 px-4 py-2 font-semibold text-red-500"
+                      >
+                        Dodaj
+                      </button>
+
+                      <textarea
+                        name="resourceDescription"
+                        placeholder="Opis zasobu"
+                        className="min-h-20 rounded-lg border border-neutral-700 bg-neutral-950 p-2 xl:col-span-3"
+                      />
+                    </form>
+
+                    <div className="mt-5">
+                      {characterResources.length === 0 ? (
+                        <p className="rounded-xl border border-dashed border-neutral-700 p-6 text-center text-sm text-neutral-500">
+                          Brak zasobów postaci.
+                        </p>
                       ) : (
-                        <div className="flex aspect-[3/4] items-center justify-center bg-neutral-950 text-7xl">
-                          🧙
+                        <div className="grid gap-4 xl:grid-cols-2">
+                          {characterResources.map((resource) => {
+                            const hasMaximum =
+                              typeof resource.maximum === "number";
+                            const isAtMaximum =
+                              hasMaximum &&
+                              resource.current >= resource.maximum!;
+
+                            return (
+                              <article
+                                key={resource.id}
+                                className="relative rounded-xl border border-red-950/80 bg-neutral-950 p-4"
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    removeCharacterResource(resource.id)
+                                  }
+                                  className="absolute right-3 top-3 rounded border border-red-900 bg-red-950/50 px-2 py-1 text-xs text-red-200"
+                                >
+                                  x
+                                </button>
+
+                                <div className="grid gap-4 pr-8 lg:grid-cols-[minmax(0,1fr)_270px]">
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-semibold text-neutral-400">
+                                      Nazwa
+                                    </p>
+
+                                    <EditableText
+                                      value={resource.name}
+                                      onSave={(value) =>
+                                        updateCharacterResourceText(
+                                          resource.id,
+                                          "name",
+                                          value,
+                                        )
+                                      }
+                                      className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-2 text-left font-bold"
+                                      inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-2 font-bold"
+                                    />
+
+                                    <p className="mt-3 text-xs font-semibold text-neutral-400">
+                                      Opis
+                                    </p>
+
+                                    <EditableText
+                                      value={resource.description || ""}
+                                      placeholder="Opis zasobu."
+                                      multiline
+                                      onSave={(value) =>
+                                        updateCharacterResourceText(
+                                          resource.id,
+                                          "description",
+                                          value,
+                                        )
+                                      }
+                                      className="mt-1 block min-h-24 w-full whitespace-pre-wrap rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-left text-sm text-neutral-300"
+                                      inputClassName="mt-1 min-h-24 w-full rounded-lg border border-red-700 bg-neutral-900 p-3 text-sm"
+                                    />
+                                  </div>
+
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-semibold text-neutral-400">
+                                      Wartość
+                                    </p>
+
+                                    <div className="mt-1 flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          changeCharacterResourceCurrent(
+                                            resource.id,
+                                            -1,
+                                          )
+                                        }
+                                        className="rounded-lg border border-neutral-600 px-3 py-2 text-lg font-bold"
+                                      >
+                                        ↓
+                                      </button>
+
+                                      <EditableNumber
+                                        value={resource.current}
+                                        min={0}
+                                        max={resource.maximum}
+                                        onSave={(value) =>
+                                          updateCharacterResourceCurrent(
+                                            resource.id,
+                                            value,
+                                          )
+                                        }
+                                        className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-900 px-4 py-2 text-center text-2xl font-bold text-red-400"
+                                        inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-900 px-4 py-2 text-center text-2xl font-bold text-red-400"
+                                      />
+
+                                      <button
+                                        type="button"
+                                        disabled={isAtMaximum}
+                                        onClick={() =>
+                                          changeCharacterResourceCurrent(
+                                            resource.id,
+                                            1,
+                                          )
+                                        }
+                                        className="rounded-lg border border-neutral-600 px-3 py-2 text-lg font-bold disabled:cursor-not-allowed disabled:border-neutral-800 disabled:text-neutral-700"
+                                      >
+                                        ↑
+                                      </button>
+                                    </div>
+
+                                    <p className="mt-2 text-xs text-neutral-500">
+                                      {hasMaximum
+                                        ? `${resource.current} / ${resource.maximum}`
+                                        : `${resource.current}, bez limitu górnego`}
+                                    </p>
+
+                                    <div className="mt-4 rounded-lg border border-neutral-700 bg-neutral-900 p-3">
+                                      <p className="text-xs font-semibold text-neutral-400">
+                                        Limit górny
+                                      </p>
+
+                                      {hasMaximum ? (
+                                        <>
+                                          <div className="mt-2 flex items-center gap-2">
+                                            <EditableNumber
+                                              value={resource.maximum ?? 0}
+                                              min={0}
+                                              onSave={(value) =>
+                                                updateCharacterResourceMaximum(
+                                                  resource.id,
+                                                  value,
+                                                )
+                                              }
+                                              className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-950 px-4 py-1 text-center text-xl font-bold"
+                                              inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-950 px-4 py-1 text-center text-xl font-bold"
+                                            />
+
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                removeCharacterResourceMaximum(
+                                                  resource.id,
+                                                )
+                                              }
+                                              className="rounded-lg border border-neutral-700 px-3 py-2 text-xs font-semibold text-neutral-300"
+                                            >
+                                              Usuń limit
+                                            </button>
+                                          </div>
+
+                                          <p className="mt-2 text-xs text-neutral-500">
+                                            Limit możesz zwiększyć np. po
+                                            awansie poziomu.
+                                          </p>
+                                        </>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            addCharacterResourceMaximum(
+                                              resource.id,
+                                            )
+                                          }
+                                          className="mt-2 rounded-lg border border-red-700 px-3 py-2 text-sm font-semibold text-red-500"
+                                        >
+                                          Dodaj limit
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </article>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
-
-                    <p className="mt-3 text-center text-xs text-neutral-500">
-                      Prawy klik: zmień portret
-                    </p>
                   </section>
-                </section>
+                </div>
+              ) : null}
 
-                <section className="rounded-xl border border-neutral-700 bg-neutral-800 p-5">
-                  <h3 className="text-center text-2xl font-bold">Mechanika</h3>
+              {characterTab === "stats" ? (
+                <div className="mt-6 space-y-6">
+                  <section className="rounded-xl border border-neutral-700 bg-neutral-800 p-5">
+                    <h3 className="text-center text-xl font-bold">
+                      Premia za biegłość
+                    </h3>
 
-                  <div className="mt-5 grid gap-4 md:grid-cols-3">
-                    <article className="rounded-xl border border-neutral-700 bg-neutral-900 p-5 text-center">
-                      <p className="text-6xl">🛡️</p>
-
-                      <div className="mt-4 flex justify-center">
-                        <EditableNumber
-                          value={character.armorClass}
-                          min={0}
-                          onSave={(value) =>
-                            updateCharacterField("armorClass", value)
-                          }
-                          className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
-                          inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
-                        />
-                      </div>
-
-                      <p className="mt-2 text-sm font-bold uppercase text-neutral-400">
-                        Klasa pancerza
-                      </p>
-                    </article>
-
-                    <article className="rounded-xl border border-neutral-700 bg-neutral-900 p-5 text-center">
-                      <p className="text-6xl">⏱️</p>
-
-                      <div className="mt-4 flex justify-center">
-                        <EditableNumber
-                          value={initiative}
-                          min={-20}
-                          max={50}
-                          formatValue={formatModifier}
-                          onSave={(value) =>
-                            updateCharacterField("initiative", value)
-                          }
-                          className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
-                          inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
-                        />
-                      </div>
-
-                      <p className="mt-2 text-sm font-bold uppercase text-neutral-400">
-                        Inicjatywa
-                      </p>
-                    </article>
-
-                    <article className="rounded-xl border border-neutral-700 bg-neutral-900 p-5 text-center">
-                      <p className="text-6xl">🥾</p>
-
-                      <div className="mt-4 flex justify-center">
-                        <EditableNumber
-                          value={speed}
-                          min={0}
-                          onSave={(value) =>
-                            updateCharacterField("speed", value)
-                          }
-                          className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
-                          inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
-                        />
-                      </div>
-
-                      <p className="mt-2 text-sm font-bold uppercase text-neutral-400">
-                        Szybkość
-                      </p>
-                    </article>
-                  </div>
-                </section>
-
-                <section className="rounded-xl border border-neutral-700 bg-neutral-800 p-5">
-                  <h3 className="text-center text-2xl font-bold">Życie</h3>
-
-                  <div className="mt-5 grid gap-4 md:grid-cols-4">
-                    <article className="rounded-xl border border-neutral-700 bg-neutral-900 p-5 text-center">
-                      <p className="text-6xl">❤️</p>
-
-                      <div className="mt-4 flex justify-center">
-                        <EditableNumber
-                          value={currentHp}
-                          min={0}
-                          onSave={(value) => updateCharacterField("hp", value)}
-                          className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
-                          inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
-                        />
-                      </div>
-
-                      <p className="mt-2 text-sm font-bold uppercase text-neutral-400">
-                        Obecne HP
-                      </p>
-                    </article>
-
-                    <article className="rounded-xl border border-neutral-700 bg-neutral-900 p-5 text-center">
-                      <p className="text-6xl">🤍</p>
-
-                      <div className="mt-4 flex justify-center">
-                        <EditableNumber
-                          value={temporaryHp}
-                          min={0}
-                          onSave={(value) =>
-                            updateCharacterField("temporaryHp", value)
-                          }
-                          className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
-                          inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
-                        />
-                      </div>
-
-                      <p className="mt-2 text-sm font-bold uppercase text-neutral-400">
-                        Tym. HP
-                      </p>
-                    </article>
-
-                    <article className="rounded-xl border border-neutral-700 bg-neutral-900 p-5 text-center">
-                      <p className="text-6xl">💗</p>
-
-                      <div className="mt-4 flex justify-center">
-                        <EditableNumber
-                          value={maxHp}
-                          min={0}
-                          onSave={(value) =>
-                            updateCharacterField("maxHp", value)
-                          }
-                          className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
-                          inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
-                        />
-                      </div>
-
-                      <p className="mt-2 text-sm font-bold uppercase text-neutral-400">
-                        Maks HP
-                      </p>
-                    </article>
-
-                    <article className="rounded-xl border border-neutral-700 bg-neutral-900 p-5 text-center">
-                      <p className="text-6xl">🎲</p>
-
-                      <div className="mt-4 flex justify-center">
-                        <EditableNumber
-                          value={hitDice}
-                          min={0}
-                          onSave={(value) =>
-                            updateCharacterField("hitDice", value)
-                          }
-                          className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
-                          inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-950 px-4 py-1 text-center text-3xl font-bold"
-                        />
-                      </div>
-
-                      <p className="mt-2 text-sm font-bold uppercase text-neutral-400">
-                        Kości trafień
-                      </p>
-                    </article>
-                  </div>
-                </section>
-
-                <section className="rounded-xl border border-neutral-700 bg-neutral-800 p-5">
-                  <h3 className="text-center text-2xl font-bold">
-                    Ochrona przed śmiercią
-                  </h3>
-
-                  <div className="mt-5 grid gap-5">
-                    <div className="flex items-center justify-center gap-4">
-                      <div className="w-28 text-right font-bold uppercase text-neutral-300">
-                        🪽 Sukcesy
-                      </div>
-
-                      <div className="flex gap-3">
-                        {[1, 2, 3].map((slot) => (
-                          <button
-                            key={`death-success-${slot}`}
-                            type="button"
-                            onClick={() =>
-                              updateCharacterField(
-                                "deathSaveSuccesses",
-                                deathSaveSuccesses === slot ? slot - 1 : slot,
-                              )
-                            }
-                            className={`h-9 w-9 rounded-lg border ${
-                              deathSaveSuccesses >= slot
-                                ? "border-red-700 bg-red-950 text-red-200"
-                                : "border-neutral-600 bg-neutral-900"
-                            }`}
-                            title={`Sukces ${slot}`}
-                          />
-                        ))}
+                    <div className="mt-4 flex justify-center">
+                      <div className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-900 px-6 py-3 text-center text-2xl font-bold">
+                        {formatModifier(proficiencyBonus)}
                       </div>
                     </div>
+                  </section>
 
-                    <div className="flex items-center justify-center gap-4">
-                      <div className="w-28 text-right font-bold uppercase text-neutral-300">
-                        💀 Porażki
-                      </div>
+                  <section className="rounded-xl border border-neutral-700 bg-neutral-800 p-5">
+                    <h3 className="text-center text-xl font-bold">
+                      Rzuty obronne
+                    </h3>
 
-                      <div className="flex gap-3">
-                        {[1, 2, 3].map((slot) => (
-                          <button
-                            key={`death-failure-${slot}`}
-                            type="button"
-                            onClick={() =>
-                              updateCharacterField(
-                                "deathSaveFailures",
-                                deathSaveFailures === slot ? slot - 1 : slot,
-                              )
-                            }
-                            className={`h-9 w-9 rounded-lg border ${
-                              deathSaveFailures >= slot
-                                ? "border-red-700 bg-red-950 text-red-200"
-                                : "border-neutral-600 bg-neutral-900"
-                            }`}
-                            title={`Porażka ${slot}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </section>
+                    <div className="mt-4 grid grid-cols-6 gap-2">
+                      {abilityColumns.map((ability) => {
+                        const abilityValue = stats[ability.key];
+                        const savingThrowModifier =
+                          getAbilityModifier(abilityValue);
 
-                <section className="rounded-xl border border-neutral-700 bg-neutral-800 p-5">
-                  <h3 className="text-center text-2xl font-bold">
-                    Zasoby postaci
-                  </h3>
+                        return (
+                          <article
+                            key={`save-${ability.key}`}
+                            className="rounded-lg border border-neutral-700 bg-neutral-900 p-2 text-center"
+                          >
+                            <p className="text-[10px] font-bold uppercase tracking-wide text-neutral-300">
+                              {ability.shortName}
+                            </p>
 
-                  <p className="mt-1 text-center text-sm text-neutral-400">
-                    Dowolne zasoby postaci. Wpisz samą liczbę, np. 37, jeśli
-                    zasób nie ma limitu. Wpisz 3 / 5, jeśli zasób ma limit
-                    górny, który potem można osobno edytować.
-                  </p>
+                            <p className="mt-2 text-xl font-bold text-red-500">
+                              {formatModifier(savingThrowModifier)}
+                            </p>
 
-                  <form
-                    onSubmit={addCharacterResource}
-                    className="mt-5 grid gap-2 rounded-xl border border-neutral-700 bg-neutral-900 p-3 xl:grid-cols-[1fr_1fr_auto]"
-                  >
-                    <input
-                      name="resourceName"
-                      required
-                      placeholder="Nazwa, np. Dusze"
-                      className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
-                    />
-
-                    <input
-                      name="resourceValue"
-                      placeholder="Wartość, np. 37 albo 3 / 5"
-                      className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
-                    />
-
-                    <button
-                      type="submit"
-                      className="rounded-lg border border-red-700 px-4 py-2 font-semibold text-red-500"
-                    >
-                      Dodaj
-                    </button>
-
-                    <textarea
-                      name="resourceDescription"
-                      placeholder="Opis zasobu"
-                      className="min-h-20 rounded-lg border border-neutral-700 bg-neutral-950 p-2 xl:col-span-3"
-                    />
-                  </form>
-
-                  <div className="mt-5">
-                    {characterResources.length === 0 ? (
-                      <p className="rounded-xl border border-dashed border-neutral-700 p-6 text-center text-sm text-neutral-500">
-                        Brak zasobów postaci.
-                      </p>
-                    ) : (
-                      <div className="grid gap-4 xl:grid-cols-2">
-                        {characterResources.map((resource) => {
-                          const hasMaximum =
-                            typeof resource.maximum === "number";
-                          const isAtMaximum =
-                            hasMaximum && resource.current >= resource.maximum!;
-
-                          return (
-                            <article
-                              key={resource.id}
-                              className="relative rounded-xl border border-red-950/80 bg-neutral-950 p-4"
+                            <button
+                              type="button"
+                              onClick={() =>
+                                makeSavingThrowRoll(
+                                  ability.fullName,
+                                  abilityValue,
+                                )
+                              }
+                              className="mt-2 w-full rounded-lg border border-red-700 px-1 py-1.5 text-[10px] font-semibold text-red-500"
                             >
+                              Rzuć
+                            </button>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  <section className="rounded-xl border border-neutral-700 bg-neutral-800 p-3">
+                    <div className="grid grid-cols-6 gap-2">
+                      {abilityColumns.map((ability) => {
+                        const abilityValue = stats[ability.key];
+                        const abilityModifier =
+                          getAbilityModifier(abilityValue);
+
+                        const relatedSkills = skillCards.filter(
+                          (skill) => skill.statKey === ability.key,
+                        );
+
+                        return (
+                          <section
+                            key={ability.key}
+                            className="rounded-2xl border border-neutral-700 bg-neutral-950 p-2"
+                          >
+                            <article className="rounded-2xl border-2 border-red-950/70 bg-neutral-900 p-3 text-center shadow-[0_0_18px_rgba(127,29,29,0.18)]">
+                              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-red-100">
+                                {ability.shortName}
+                              </p>
+
+                              <div className="mt-3 text-5xl">
+                                {ability.icon}
+                              </div>
+
+                              <div className="mt-3 flex justify-center">
+                                <EditableNumber
+                                  value={abilityValue}
+                                  onSave={(value) =>
+                                    updateCharacterStat(ability.key, value)
+                                  }
+                                  min={1}
+                                  max={30}
+                                  className="min-w-14 rounded-lg border border-neutral-600 bg-neutral-950 px-2 py-1 text-center text-xl font-bold text-white"
+                                  inputClassName="w-14 rounded-lg border border-red-700 bg-neutral-950 p-1 text-center text-xl font-bold text-white"
+                                  title="Kliknij dwa razy, aby zmienić wartość cechy"
+                                />
+                              </div>
+
+                              <p className="mt-2 text-3xl font-bold text-red-500">
+                                {formatModifier(abilityModifier)}
+                              </p>
+
                               <button
                                 type="button"
                                 onClick={() =>
-                                  removeCharacterResource(resource.id)
+                                  makeStatRoll(ability.fullName, abilityValue)
                                 }
+                                className="mt-3 w-full rounded-lg border border-red-700 bg-red-950/20 px-2 py-2 text-xs font-semibold text-red-400"
+                              >
+                                Rzuć {formatModifier(abilityModifier)}
+                              </button>
+                            </article>
+
+                            <div className="my-3 flex items-center gap-2">
+                              <div className="h-px flex-1 bg-neutral-800" />
+
+                              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500">
+                                Umiejętności
+                              </p>
+
+                              <div className="h-px flex-1 bg-neutral-800" />
+                            </div>
+
+                            <div className="grid gap-2">
+                              {relatedSkills.length === 0 ? (
+                                <div className="flex min-h-[250px] items-center justify-center rounded-xl border border-dashed border-neutral-800 bg-black/30 p-3 text-center">
+                                  <p className="text-xs text-neutral-600">
+                                    Brak umiejętności
+                                  </p>
+                                </div>
+                              ) : (
+                                relatedSkills.map((skill) => {
+                                  const baseModifier = getAbilityModifier(
+                                    stats[skill.statKey],
+                                  );
+
+                                  const modifier =
+                                    character.skillModifiers?.[skill.key] ??
+                                    baseModifier;
+
+                                  return (
+                                    <article
+                                      key={skill.key}
+                                      className="rounded-xl border border-neutral-800 bg-black/40 p-2 text-center"
+                                    >
+                                      <p className="min-h-[28px] text-[10px] font-bold uppercase leading-tight text-neutral-200">
+                                        {skill.name}
+                                      </p>
+
+                                      <div className="mt-2 text-2xl opacity-80">
+                                        {skill.icon}
+                                      </div>
+
+                                      <div className="mt-2 flex justify-center">
+                                        <EditableNumber
+                                          value={modifier}
+                                          onSave={(value) =>
+                                            updateSkillModifier(
+                                              skill.key,
+                                              value,
+                                            )
+                                          }
+                                          min={-20}
+                                          max={50}
+                                          formatValue={formatModifier}
+                                          className="min-w-12 rounded-lg border border-neutral-700 bg-neutral-950 px-2 py-1 text-center text-sm font-bold text-red-500"
+                                          inputClassName="w-14 rounded-lg border border-red-700 bg-neutral-950 p-1 text-center text-sm font-bold text-red-500"
+                                          title="Kliknij dwa razy, aby zmienić modyfikator umiejętności"
+                                        />
+                                      </div>
+
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          makeSkillRoll(skill.name, modifier)
+                                        }
+                                        className="mt-2 w-full rounded-lg border border-neutral-700 px-1 py-1.5 text-[10px] font-semibold text-neutral-300"
+                                      >
+                                        Rzuć {formatModifier(modifier)}
+                                      </button>
+                                    </article>
+                                  );
+                                })
+                              )}
+                            </div>
+                          </section>
+                        );
+                      })}
+                    </div>
+                  </section>
+                </div>
+              ) : null}
+
+              {characterTab === "abilities" ? (
+                <div className="mt-6 grid gap-5">
+                  <section className="grid h-[650px] grid-rows-[auto_auto_minmax(0,1fr)] rounded-xl border border-neutral-700 bg-neutral-800 p-4">
+                    <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="w-full text-center">
+                        <h3 className="text-2xl font-bold">Ataki i czary</h3>
+
+                        <p className="mt-1 text-sm text-neutral-400">
+                          Broń, zaklęcia i akcje z rzutem ataku albo
+                          obrażeniami.
+                        </p>
+                      </div>
+                    </div>
+
+                    <form
+                      onSubmit={addAttackSpell}
+                      className="mt-4 grid gap-2 rounded-xl border border-neutral-700 bg-neutral-900 p-3 xl:grid-cols-[1fr_130px_130px_auto]"
+                    >
+                      <input
+                        name="attackSpellName"
+                        required
+                        placeholder="Nazwa, np. Długi łuk"
+                        className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
+                      />
+
+                      <input
+                        name="attackRoll"
+                        placeholder="atak, np. +5"
+                        className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
+                      />
+
+                      <input
+                        name="damageRoll"
+                        placeholder="obraż., np. 1d8+3"
+                        className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
+                      />
+
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-red-700 px-4 py-2 font-semibold text-red-500"
+                      >
+                        Dodaj
+                      </button>
+
+                      <textarea
+                        name="attackSpellDescription"
+                        placeholder="Opis ataku, czaru albo akcji"
+                        className="min-h-20 rounded-lg border border-neutral-700 bg-neutral-950 p-2 xl:col-span-4"
+                      />
+                    </form>
+
+                    <div className="min-h-0 overflow-y-auto pr-2 pt-4">
+                      {attackSpells.length === 0 ? (
+                        <p className="rounded-xl border border-dashed border-neutral-700 p-6 text-center text-sm text-neutral-500">
+                          Brak ataków i czarów. Dodaj pierwszy blok powyżej.
+                        </p>
+                      ) : (
+                        <div className="grid gap-4 2xl:grid-cols-2">
+                          {attackSpells.map((item) => (
+                            <article
+                              key={item.id}
+                              className="relative rounded-xl border border-red-950/80 bg-neutral-950 p-3"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => removeAttackSpell(item.id)}
                                 className="absolute right-3 top-3 rounded border border-red-900 bg-red-950/50 px-2 py-1 text-xs text-red-200"
                               >
                                 x
                               </button>
 
-                              <div className="grid gap-4 pr-8 lg:grid-cols-[minmax(0,1fr)_270px]">
-                                <div className="min-w-0">
+                              <div className="grid gap-3 lg:grid-cols-[190px_minmax(0,1fr)]">
+                                <div>
+                                  <div
+                                    onContextMenu={(event) => {
+                                      event.preventDefault();
+
+                                      if (!canEdit) {
+                                        return;
+                                      }
+
+                                      setImagePickerTarget({
+                                        type: "attackSpell",
+                                        id: item.id,
+                                      });
+                                    }}
+                                    title={
+                                      canEdit
+                                        ? "Kliknij prawym przyciskiem myszy, aby zmienić grafikę"
+                                        : "Nie masz uprawnień do edycji grafiki"
+                                    }
+                                    className="overflow-hidden rounded-lg border border-neutral-700 bg-neutral-900"
+                                  >
+                                    {item.imageUrl ? (
+                                      <img
+                                        src={item.imageUrl}
+                                        alt={item.name}
+                                        className="aspect-square w-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="flex aspect-square items-center justify-center text-6xl">
+                                        ⚔️
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <p className="mt-2 text-center text-xs text-neutral-500">
+                                    Prawy klik: zmień grafikę
+                                  </p>
+                                </div>
+
+                                <div className="min-w-0 pr-8">
                                   <p className="text-xs font-semibold text-neutral-400">
                                     Nazwa
                                   </p>
 
                                   <EditableText
-                                    value={resource.name}
+                                    value={item.name}
                                     onSave={(value) =>
-                                      updateCharacterResourceText(
-                                        resource.id,
+                                      updateAttackSpellTextField(
+                                        item.id,
+                                        "name",
+                                        value,
+                                      )
+                                    }
+                                    className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-2 text-left font-bold"
+                                    inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-2 font-bold"
+                                  />
+
+                                  <div className="mt-3 grid gap-2 md:grid-cols-2">
+                                    <div>
+                                      <p className="text-xs font-semibold text-neutral-400">
+                                        Rzut ataku
+                                      </p>
+
+                                      <EditableText
+                                        value={item.attackRoll || ""}
+                                        placeholder="+5 albo 1d20+5"
+                                        onSave={(value) =>
+                                          updateAttackSpellTextField(
+                                            item.id,
+                                            "attackRoll",
+                                            value,
+                                          )
+                                        }
+                                        className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-2 text-left text-sm"
+                                        inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-2 text-sm"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <p className="text-xs font-semibold text-neutral-400">
+                                        Obrażenia
+                                      </p>
+
+                                      <EditableText
+                                        value={item.damageRoll || ""}
+                                        placeholder="1d8+3"
+                                        onSave={(value) =>
+                                          updateAttackSpellTextField(
+                                            item.id,
+                                            "damageRoll",
+                                            value,
+                                          )
+                                        }
+                                        className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-2 text-left text-sm"
+                                        inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-2 text-sm"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-3">
+                                    <p className="text-xs font-semibold text-neutral-400">
+                                      Opis
+                                    </p>
+
+                                    <EditableText
+                                      value={item.description || ""}
+                                      placeholder="Opis ataku albo czaru."
+                                      multiline
+                                      onSave={(value) =>
+                                        updateAttackSpellTextField(
+                                          item.id,
+                                          "description",
+                                          value,
+                                        )
+                                      }
+                                      className="mt-1 block min-h-24 w-full whitespace-pre-wrap rounded-lg border border-neutral-700 bg-neutral-900 p-2 text-left text-sm text-neutral-300"
+                                      inputClassName="mt-1 min-h-24 w-full rounded-lg border border-red-700 bg-neutral-900 p-2 text-sm"
+                                    />
+                                  </div>
+
+                                  <div className="mt-3 grid gap-2 md:grid-cols-2">
+                                    <button
+                                      type="button"
+                                      disabled={!item.attackRoll?.trim()}
+                                      onClick={() =>
+                                        makeRoll(
+                                          normalizeAttackRollFormula(
+                                            item.attackRoll || "",
+                                          ),
+                                          `${item.name}: atak`,
+                                        )
+                                      }
+                                      className="rounded-lg border border-red-700 px-3 py-2 text-sm font-semibold text-red-500 disabled:cursor-not-allowed disabled:border-neutral-700 disabled:text-neutral-600"
+                                    >
+                                      Rzuć atak
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      disabled={!item.damageRoll?.trim()}
+                                      onClick={() =>
+                                        makeRoll(
+                                          item.damageRoll || "",
+                                          `${item.name}: obrażenia`,
+                                        )
+                                      }
+                                      className="rounded-lg border border-red-700 px-3 py-2 text-sm font-semibold text-red-500 disabled:cursor-not-allowed disabled:border-neutral-700 disabled:text-neutral-600"
+                                    >
+                                      Rzuć obrażenia
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </article>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  <section className="grid h-[540px] grid-rows-[auto_auto_minmax(0,1fr)] rounded-xl border border-neutral-700 bg-neutral-800 p-4">
+                    <div>
+                      <h3 className="text-center text-2xl font-bold">
+                        Cechy klasowe
+                      </h3>
+
+                      <p className="mt-1 text-center text-sm text-neutral-400">
+                        Zdolności z klasy, rasy, tła albo specjalnych talentów.
+                      </p>
+                    </div>
+
+                    <form
+                      onSubmit={addClassFeature}
+                      className="mt-4 grid gap-2 rounded-xl border border-neutral-700 bg-neutral-900 p-3 xl:grid-cols-[1fr_auto]"
+                    >
+                      <input
+                        name="classFeatureName"
+                        required
+                        placeholder="Nazwa, np. Chef"
+                        className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
+                      />
+
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-red-700 px-4 py-2 font-semibold text-red-500"
+                      >
+                        Dodaj
+                      </button>
+
+                      <textarea
+                        name="classFeatureDescription"
+                        placeholder="Opis cechy klasowej"
+                        className="min-h-20 rounded-lg border border-neutral-700 bg-neutral-950 p-2 xl:col-span-2"
+                      />
+                    </form>
+
+                    <div className="min-h-0 overflow-y-auto pr-2 pt-4">
+                      {classFeatures.length === 0 ? (
+                        <p className="rounded-xl border border-dashed border-neutral-700 p-6 text-center text-sm text-neutral-500">
+                          Brak cech klasowych.
+                        </p>
+                      ) : (
+                        <div className="grid gap-4">
+                          {classFeatures.map((item) => (
+                            <article
+                              key={item.id}
+                              className="relative rounded-xl border border-red-950/80 bg-neutral-950 p-3"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => removeClassFeature(item.id)}
+                                className="absolute right-3 top-3 rounded border border-red-900 bg-red-950/50 px-2 py-1 text-xs text-red-200"
+                              >
+                                x
+                              </button>
+
+                              <div className="grid gap-4 lg:grid-cols-[170px_minmax(0,1fr)]">
+                                <div>
+                                  <div
+                                    onContextMenu={(event) => {
+                                      event.preventDefault();
+
+                                      if (!canEdit) {
+                                        return;
+                                      }
+
+                                      setImagePickerTarget({
+                                        type: "classFeature",
+                                        id: item.id,
+                                      });
+                                    }}
+                                    title={
+                                      canEdit
+                                        ? "Kliknij prawym przyciskiem myszy, aby zmienić grafikę"
+                                        : "Nie masz uprawnień do edycji grafiki"
+                                    }
+                                    className="overflow-hidden rounded-lg border border-neutral-700 bg-neutral-900"
+                                  >
+                                    {item.imageUrl ? (
+                                      <img
+                                        src={item.imageUrl}
+                                        alt={item.name}
+                                        className="aspect-square w-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="flex aspect-square items-center justify-center text-6xl">
+                                        ✨
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <p className="mt-2 text-center text-xs text-neutral-500">
+                                    Prawy klik: zmień grafikę
+                                  </p>
+                                </div>
+
+                                <div className="min-w-0 pr-8">
+                                  <p className="text-xs font-semibold text-neutral-400">
+                                    Nazwa
+                                  </p>
+
+                                  <EditableText
+                                    value={item.name}
+                                    onSave={(value) =>
+                                      updateClassFeatureTextField(
+                                        item.id,
                                         "name",
                                         value,
                                       )
@@ -2816,650 +3541,83 @@ export default function CampaignPlayPage() {
                                   </p>
 
                                   <EditableText
-                                    value={resource.description || ""}
-                                    placeholder="Opis zasobu."
-                                    multiline
-                                    onSave={(value) =>
-                                      updateCharacterResourceText(
-                                        resource.id,
-                                        "description",
-                                        value,
-                                      )
-                                    }
-                                    className="mt-1 block min-h-24 w-full whitespace-pre-wrap rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-left text-sm text-neutral-300"
-                                    inputClassName="mt-1 min-h-24 w-full rounded-lg border border-red-700 bg-neutral-900 p-3 text-sm"
-                                  />
-                                </div>
-
-                                <div className="min-w-0">
-                                  <p className="text-xs font-semibold text-neutral-400">
-                                    Wartość
-                                  </p>
-
-                                  <div className="mt-1 flex items-center gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        changeCharacterResourceCurrent(
-                                          resource.id,
-                                          -1,
-                                        )
-                                      }
-                                      className="rounded-lg border border-neutral-600 px-3 py-2 text-lg font-bold"
-                                    >
-                                      ↓
-                                    </button>
-
-                                    <EditableNumber
-                                      value={resource.current}
-                                      min={0}
-                                      max={resource.maximum}
-                                      onSave={(value) =>
-                                        updateCharacterResourceCurrent(
-                                          resource.id,
-                                          value,
-                                        )
-                                      }
-                                      className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-900 px-4 py-2 text-center text-2xl font-bold text-red-400"
-                                      inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-900 px-4 py-2 text-center text-2xl font-bold text-red-400"
-                                    />
-
-                                    <button
-                                      type="button"
-                                      disabled={isAtMaximum}
-                                      onClick={() =>
-                                        changeCharacterResourceCurrent(
-                                          resource.id,
-                                          1,
-                                        )
-                                      }
-                                      className="rounded-lg border border-neutral-600 px-3 py-2 text-lg font-bold disabled:cursor-not-allowed disabled:border-neutral-800 disabled:text-neutral-700"
-                                    >
-                                      ↑
-                                    </button>
-                                  </div>
-
-                                  <p className="mt-2 text-xs text-neutral-500">
-                                    {hasMaximum
-                                      ? `${resource.current} / ${resource.maximum}`
-                                      : `${resource.current}, bez limitu górnego`}
-                                  </p>
-
-                                  <div className="mt-4 rounded-lg border border-neutral-700 bg-neutral-900 p-3">
-                                    <p className="text-xs font-semibold text-neutral-400">
-                                      Limit górny
-                                    </p>
-
-                                    {hasMaximum ? (
-                                      <>
-                                        <div className="mt-2 flex items-center gap-2">
-                                          <EditableNumber
-                                            value={resource.maximum ?? 0}
-                                            min={0}
-                                            onSave={(value) =>
-                                              updateCharacterResourceMaximum(
-                                                resource.id,
-                                                value,
-                                              )
-                                            }
-                                            className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-950 px-4 py-1 text-center text-xl font-bold"
-                                            inputClassName="w-24 rounded-lg border border-red-700 bg-neutral-950 px-4 py-1 text-center text-xl font-bold"
-                                          />
-
-                                          <button
-                                            type="button"
-                                            onClick={() =>
-                                              removeCharacterResourceMaximum(
-                                                resource.id,
-                                              )
-                                            }
-                                            className="rounded-lg border border-neutral-700 px-3 py-2 text-xs font-semibold text-neutral-300"
-                                          >
-                                            Usuń limit
-                                          </button>
-                                        </div>
-
-                                        <p className="mt-2 text-xs text-neutral-500">
-                                          Limit możesz zwiększyć np. po awansie
-                                          poziomu.
-                                        </p>
-                                      </>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          addCharacterResourceMaximum(
-                                            resource.id,
-                                          )
-                                        }
-                                        className="mt-2 rounded-lg border border-red-700 px-3 py-2 text-sm font-semibold text-red-500"
-                                      >
-                                        Dodaj limit
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </article>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </section>
-              </div>
-            ) : null}
-
-            {characterTab === "stats" ? (
-              <div className="mt-6 space-y-6">
-                <section className="rounded-xl border border-neutral-700 bg-neutral-800 p-5">
-                  <h3 className="text-center text-xl font-bold">
-                    Premia za biegłość
-                  </h3>
-
-                  <div className="mt-4 flex justify-center">
-                    <div className="min-w-20 rounded-lg border border-neutral-600 bg-neutral-900 px-6 py-3 text-center text-2xl font-bold">
-                      {formatModifier(proficiencyBonus)}
-                    </div>
-                  </div>
-                </section>
-
-                <section className="rounded-xl border border-neutral-700 bg-neutral-800 p-5">
-                  <h3 className="text-center text-xl font-bold">
-                    Rzuty obronne
-                  </h3>
-
-                  <div className="mt-4 grid grid-cols-6 gap-2">
-                    {abilityColumns.map((ability) => {
-                      const abilityValue = stats[ability.key];
-                      const savingThrowModifier =
-                        getAbilityModifier(abilityValue);
-
-                      return (
-                        <article
-                          key={`save-${ability.key}`}
-                          className="rounded-lg border border-neutral-700 bg-neutral-900 p-2 text-center"
-                        >
-                          <p className="text-[10px] font-bold uppercase tracking-wide text-neutral-300">
-                            {ability.shortName}
-                          </p>
-
-                          <p className="mt-2 text-xl font-bold text-red-500">
-                            {formatModifier(savingThrowModifier)}
-                          </p>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              makeSavingThrowRoll(
-                                ability.fullName,
-                                abilityValue,
-                              )
-                            }
-                            className="mt-2 w-full rounded-lg border border-red-700 px-1 py-1.5 text-[10px] font-semibold text-red-500"
-                          >
-                            Rzuć
-                          </button>
-                        </article>
-                      );
-                    })}
-                  </div>
-                </section>
-
-                <section className="rounded-xl border border-neutral-700 bg-neutral-800 p-3">
-                  <div className="grid grid-cols-6 gap-2">
-                    {abilityColumns.map((ability) => {
-                      const abilityValue = stats[ability.key];
-                      const abilityModifier = getAbilityModifier(abilityValue);
-
-                      const relatedSkills = skillCards.filter(
-                        (skill) => skill.statKey === ability.key,
-                      );
-
-                      return (
-                        <section
-                          key={ability.key}
-                          className="rounded-2xl border border-neutral-700 bg-neutral-950 p-2"
-                        >
-                          <article className="rounded-2xl border-2 border-red-950/70 bg-neutral-900 p-3 text-center shadow-[0_0_18px_rgba(127,29,29,0.18)]">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-red-100">
-                              {ability.shortName}
-                            </p>
-
-                            <div className="mt-3 text-5xl">{ability.icon}</div>
-
-                            <div className="mt-3 flex justify-center">
-                              <EditableNumber
-                                value={abilityValue}
-                                onSave={(value) =>
-                                  updateCharacterStat(ability.key, value)
-                                }
-                                min={1}
-                                max={30}
-                                className="min-w-14 rounded-lg border border-neutral-600 bg-neutral-950 px-2 py-1 text-center text-xl font-bold text-white"
-                                inputClassName="w-14 rounded-lg border border-red-700 bg-neutral-950 p-1 text-center text-xl font-bold text-white"
-                                title="Kliknij dwa razy, aby zmienić wartość cechy"
-                              />
-                            </div>
-
-                            <p className="mt-2 text-3xl font-bold text-red-500">
-                              {formatModifier(abilityModifier)}
-                            </p>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                makeStatRoll(ability.fullName, abilityValue)
-                              }
-                              className="mt-3 w-full rounded-lg border border-red-700 bg-red-950/20 px-2 py-2 text-xs font-semibold text-red-400"
-                            >
-                              Rzuć {formatModifier(abilityModifier)}
-                            </button>
-                          </article>
-
-                          <div className="my-3 flex items-center gap-2">
-                            <div className="h-px flex-1 bg-neutral-800" />
-
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500">
-                              Umiejętności
-                            </p>
-
-                            <div className="h-px flex-1 bg-neutral-800" />
-                          </div>
-
-                          <div className="grid gap-2">
-                            {relatedSkills.length === 0 ? (
-                              <div className="flex min-h-[250px] items-center justify-center rounded-xl border border-dashed border-neutral-800 bg-black/30 p-3 text-center">
-                                <p className="text-xs text-neutral-600">
-                                  Brak umiejętności
-                                </p>
-                              </div>
-                            ) : (
-                              relatedSkills.map((skill) => {
-                                const baseModifier = getAbilityModifier(
-                                  stats[skill.statKey],
-                                );
-
-                                const modifier =
-                                  character.skillModifiers?.[skill.key] ??
-                                  baseModifier;
-
-                                return (
-                                  <article
-                                    key={skill.key}
-                                    className="rounded-xl border border-neutral-800 bg-black/40 p-2 text-center"
-                                  >
-                                    <p className="min-h-[28px] text-[10px] font-bold uppercase leading-tight text-neutral-200">
-                                      {skill.name}
-                                    </p>
-
-                                    <div className="mt-2 text-2xl opacity-80">
-                                      {skill.icon}
-                                    </div>
-
-                                    <div className="mt-2 flex justify-center">
-                                      <EditableNumber
-                                        value={modifier}
-                                        onSave={(value) =>
-                                          updateSkillModifier(skill.key, value)
-                                        }
-                                        min={-20}
-                                        max={50}
-                                        formatValue={formatModifier}
-                                        className="min-w-12 rounded-lg border border-neutral-700 bg-neutral-950 px-2 py-1 text-center text-sm font-bold text-red-500"
-                                        inputClassName="w-14 rounded-lg border border-red-700 bg-neutral-950 p-1 text-center text-sm font-bold text-red-500"
-                                        title="Kliknij dwa razy, aby zmienić modyfikator umiejętności"
-                                      />
-                                    </div>
-
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        makeSkillRoll(skill.name, modifier)
-                                      }
-                                      className="mt-2 w-full rounded-lg border border-neutral-700 px-1 py-1.5 text-[10px] font-semibold text-neutral-300"
-                                    >
-                                      Rzuć {formatModifier(modifier)}
-                                    </button>
-                                  </article>
-                                );
-                              })
-                            )}
-                          </div>
-                        </section>
-                      );
-                    })}
-                  </div>
-                </section>
-              </div>
-            ) : null}
-
-            {characterTab === "abilities" ? (
-              <div className="mt-6 grid gap-5">
-                <section className="grid h-[650px] grid-rows-[auto_auto_minmax(0,1fr)] rounded-xl border border-neutral-700 bg-neutral-800 p-4">
-                  <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="w-full text-center">
-                      <h3 className="text-2xl font-bold">Ataki i czary</h3>
-
-                      <p className="mt-1 text-sm text-neutral-400">
-                        Broń, zaklęcia i akcje z rzutem ataku albo obrażeniami.
-                      </p>
-                    </div>
-                  </div>
-
-                  <form
-                    onSubmit={addAttackSpell}
-                    className="mt-4 grid gap-2 rounded-xl border border-neutral-700 bg-neutral-900 p-3 xl:grid-cols-[1fr_130px_130px_auto]"
-                  >
-                    <input
-                      name="attackSpellName"
-                      required
-                      placeholder="Nazwa, np. Długi łuk"
-                      className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
-                    />
-
-                    <input
-                      name="attackRoll"
-                      placeholder="atak, np. +5"
-                      className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
-                    />
-
-                    <input
-                      name="damageRoll"
-                      placeholder="obraż., np. 1d8+3"
-                      className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
-                    />
-
-                    <button
-                      type="submit"
-                      className="rounded-lg border border-red-700 px-4 py-2 font-semibold text-red-500"
-                    >
-                      Dodaj
-                    </button>
-
-                    <textarea
-                      name="attackSpellDescription"
-                      placeholder="Opis ataku, czaru albo akcji"
-                      className="min-h-20 rounded-lg border border-neutral-700 bg-neutral-950 p-2 xl:col-span-4"
-                    />
-                  </form>
-
-                  <div className="min-h-0 overflow-y-auto pr-2 pt-4">
-                    {attackSpells.length === 0 ? (
-                      <p className="rounded-xl border border-dashed border-neutral-700 p-6 text-center text-sm text-neutral-500">
-                        Brak ataków i czarów. Dodaj pierwszy blok powyżej.
-                      </p>
-                    ) : (
-                      <div className="grid gap-4 2xl:grid-cols-2">
-                        {attackSpells.map((item) => (
-                          <article
-                            key={item.id}
-                            className="relative rounded-xl border border-red-950/80 bg-neutral-950 p-3"
-                          >
-                            <button
-                              type="button"
-                              onClick={() => removeAttackSpell(item.id)}
-                              className="absolute right-3 top-3 rounded border border-red-900 bg-red-950/50 px-2 py-1 text-xs text-red-200"
-                            >
-                              x
-                            </button>
-
-                            <div className="grid gap-3 lg:grid-cols-[190px_minmax(0,1fr)]">
-                              <div>
-                                <div
-                                  onContextMenu={(event) => {
-                                    event.preventDefault();
-
-                                    if (!canEdit) {
-                                      return;
-                                    }
-
-                                    setImagePickerTarget({
-                                      type: "attackSpell",
-                                      id: item.id,
-                                    });
-                                  }}
-                                  title={
-                                    canEdit
-                                      ? "Kliknij prawym przyciskiem myszy, aby zmienić grafikę"
-                                      : "Nie masz uprawnień do edycji grafiki"
-                                  }
-                                  className="overflow-hidden rounded-lg border border-neutral-700 bg-neutral-900"
-                                >
-                                  {item.imageUrl ? (
-                                    <img
-                                      src={item.imageUrl}
-                                      alt={item.name}
-                                      className="aspect-square w-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="flex aspect-square items-center justify-center text-6xl">
-                                      ⚔️
-                                    </div>
-                                  )}
-                                </div>
-
-                                <p className="mt-2 text-center text-xs text-neutral-500">
-                                  Prawy klik: zmień grafikę
-                                </p>
-                              </div>
-
-                              <div className="min-w-0 pr-8">
-                                <p className="text-xs font-semibold text-neutral-400">
-                                  Nazwa
-                                </p>
-
-                                <EditableText
-                                  value={item.name}
-                                  onSave={(value) =>
-                                    updateAttackSpellTextField(
-                                      item.id,
-                                      "name",
-                                      value,
-                                    )
-                                  }
-                                  className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-2 text-left font-bold"
-                                  inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-2 font-bold"
-                                />
-
-                                <div className="mt-3 grid gap-2 md:grid-cols-2">
-                                  <div>
-                                    <p className="text-xs font-semibold text-neutral-400">
-                                      Rzut ataku
-                                    </p>
-
-                                    <EditableText
-                                      value={item.attackRoll || ""}
-                                      placeholder="+5 albo 1d20+5"
-                                      onSave={(value) =>
-                                        updateAttackSpellTextField(
-                                          item.id,
-                                          "attackRoll",
-                                          value,
-                                        )
-                                      }
-                                      className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-2 text-left text-sm"
-                                      inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-2 text-sm"
-                                    />
-                                  </div>
-
-                                  <div>
-                                    <p className="text-xs font-semibold text-neutral-400">
-                                      Obrażenia
-                                    </p>
-
-                                    <EditableText
-                                      value={item.damageRoll || ""}
-                                      placeholder="1d8+3"
-                                      onSave={(value) =>
-                                        updateAttackSpellTextField(
-                                          item.id,
-                                          "damageRoll",
-                                          value,
-                                        )
-                                      }
-                                      className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-2 text-left text-sm"
-                                      inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-2 text-sm"
-                                    />
-                                  </div>
-                                </div>
-
-                                <div className="mt-3">
-                                  <p className="text-xs font-semibold text-neutral-400">
-                                    Opis
-                                  </p>
-
-                                  <EditableText
                                     value={item.description || ""}
-                                    placeholder="Opis ataku albo czaru."
+                                    placeholder="Opis cechy."
                                     multiline
                                     onSave={(value) =>
-                                      updateAttackSpellTextField(
+                                      updateClassFeatureTextField(
                                         item.id,
                                         "description",
                                         value,
                                       )
                                     }
-                                    className="mt-1 block min-h-24 w-full whitespace-pre-wrap rounded-lg border border-neutral-700 bg-neutral-900 p-2 text-left text-sm text-neutral-300"
-                                    inputClassName="mt-1 min-h-24 w-full rounded-lg border border-red-700 bg-neutral-900 p-2 text-sm"
+                                    className="mt-1 block min-h-32 w-full whitespace-pre-wrap rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-left text-sm text-neutral-300"
+                                    inputClassName="mt-1 min-h-32 w-full rounded-lg border border-red-700 bg-neutral-900 p-3 text-sm"
                                   />
                                 </div>
-
-                                <div className="mt-3 grid gap-2 md:grid-cols-2">
-                                  <button
-                                    type="button"
-                                    disabled={!item.attackRoll?.trim()}
-                                    onClick={() =>
-                                      makeRoll(
-                                        normalizeAttackRollFormula(
-                                          item.attackRoll || "",
-                                        ),
-                                        `${item.name}: atak`,
-                                      )
-                                    }
-                                    className="rounded-lg border border-red-700 px-3 py-2 text-sm font-semibold text-red-500 disabled:cursor-not-allowed disabled:border-neutral-700 disabled:text-neutral-600"
-                                  >
-                                    Rzuć atak
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    disabled={!item.damageRoll?.trim()}
-                                    onClick={() =>
-                                      makeRoll(
-                                        item.damageRoll || "",
-                                        `${item.name}: obrażenia`,
-                                      )
-                                    }
-                                    className="rounded-lg border border-red-700 px-3 py-2 text-sm font-semibold text-red-500 disabled:cursor-not-allowed disabled:border-neutral-700 disabled:text-neutral-600"
-                                  >
-                                    Rzuć obrażenia
-                                  </button>
-                                </div>
                               </div>
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </section>
+                            </article>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </section>
 
-                <section className="grid h-[540px] grid-rows-[auto_auto_minmax(0,1fr)] rounded-xl border border-neutral-700 bg-neutral-800 p-4">
-                  <div>
-                    <h3 className="text-center text-2xl font-bold">
-                      Cechy klasowe
-                    </h3>
+                  <section className="grid h-[520px] grid-rows-[auto_auto_minmax(0,1fr)] rounded-xl border border-neutral-700 bg-neutral-800 p-4">
+                    <div>
+                      <h3 className="text-center text-2xl font-bold">
+                        Inne biegłości i języki
+                      </h3>
 
-                    <p className="mt-1 text-center text-sm text-neutral-400">
-                      Zdolności z klasy, rasy, tła albo specjalnych talentów.
-                    </p>
-                  </div>
-
-                  <form
-                    onSubmit={addClassFeature}
-                    className="mt-4 grid gap-2 rounded-xl border border-neutral-700 bg-neutral-900 p-3 xl:grid-cols-[1fr_auto]"
-                  >
-                    <input
-                      name="classFeatureName"
-                      required
-                      placeholder="Nazwa, np. Chef"
-                      className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
-                    />
-
-                    <button
-                      type="submit"
-                      className="rounded-lg border border-red-700 px-4 py-2 font-semibold text-red-500"
-                    >
-                      Dodaj
-                    </button>
-
-                    <textarea
-                      name="classFeatureDescription"
-                      placeholder="Opis cechy klasowej"
-                      className="min-h-20 rounded-lg border border-neutral-700 bg-neutral-950 p-2 xl:col-span-2"
-                    />
-                  </form>
-
-                  <div className="min-h-0 overflow-y-auto pr-2 pt-4">
-                    {classFeatures.length === 0 ? (
-                      <p className="rounded-xl border border-dashed border-neutral-700 p-6 text-center text-sm text-neutral-500">
-                        Brak cech klasowych.
+                      <p className="mt-1 text-center text-sm text-neutral-400">
+                        Języki, narzędzia, specjalne biegłości i wiedza postaci.
                       </p>
-                    ) : (
-                      <div className="grid gap-4">
-                        {classFeatures.map((item) => (
-                          <article
-                            key={item.id}
-                            className="relative rounded-xl border border-red-950/80 bg-neutral-950 p-3"
-                          >
-                            <button
-                              type="button"
-                              onClick={() => removeClassFeature(item.id)}
-                              className="absolute right-3 top-3 rounded border border-red-900 bg-red-950/50 px-2 py-1 text-xs text-red-200"
+                    </div>
+
+                    <form
+                      onSubmit={addOtherTrait}
+                      className="mt-4 grid gap-2 rounded-xl border border-neutral-700 bg-neutral-900 p-3 xl:grid-cols-[1fr_auto]"
+                    >
+                      <input
+                        name="otherTraitName"
+                        required
+                        placeholder="Nazwa, np. Język ludu Estron"
+                        className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
+                      />
+
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-red-700 px-4 py-2 font-semibold text-red-500"
+                      >
+                        Dodaj
+                      </button>
+
+                      <textarea
+                        name="otherTraitDescription"
+                        placeholder="Opis biegłości, języka albo wiedzy"
+                        className="min-h-20 rounded-lg border border-neutral-700 bg-neutral-950 p-2 xl:col-span-2"
+                      />
+                    </form>
+
+                    <div className="min-h-0 overflow-y-auto pr-2 pt-4">
+                      {otherTraits.length === 0 ? (
+                        <p className="rounded-xl border border-dashed border-neutral-700 p-6 text-center text-sm text-neutral-500">
+                          Brak innych biegłości i języków.
+                        </p>
+                      ) : (
+                        <div className="grid gap-4">
+                          {otherTraits.map((item) => (
+                            <article
+                              key={item.id}
+                              className="relative rounded-xl border border-red-950/80 bg-neutral-950 p-3"
                             >
-                              x
-                            </button>
-
-                            <div className="grid gap-4 lg:grid-cols-[170px_minmax(0,1fr)]">
-                              <div>
-                                <div
-                                  onContextMenu={(event) => {
-                                    event.preventDefault();
-
-                                    if (!canEdit) {
-                                      return;
-                                    }
-
-                                    setImagePickerTarget({
-                                      type: "classFeature",
-                                      id: item.id,
-                                    });
-                                  }}
-                                  title={
-                                    canEdit
-                                      ? "Kliknij prawym przyciskiem myszy, aby zmienić grafikę"
-                                      : "Nie masz uprawnień do edycji grafiki"
-                                  }
-                                  className="overflow-hidden rounded-lg border border-neutral-700 bg-neutral-900"
-                                >
-                                  {item.imageUrl ? (
-                                    <img
-                                      src={item.imageUrl}
-                                      alt={item.name}
-                                      className="aspect-square w-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="flex aspect-square items-center justify-center text-6xl">
-                                      ✨
-                                    </div>
-                                  )}
-                                </div>
-
-                                <p className="mt-2 text-center text-xs text-neutral-500">
-                                  Prawy klik: zmień grafikę
-                                </p>
-                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeOtherTrait(item.id)}
+                                className="absolute right-3 top-3 rounded border border-red-900 bg-red-950/50 px-2 py-1 text-xs text-red-200"
+                              >
+                                x
+                              </button>
 
                               <div className="min-w-0 pr-8">
                                 <p className="text-xs font-semibold text-neutral-400">
@@ -3469,7 +3627,7 @@ export default function CampaignPlayPage() {
                                 <EditableText
                                   value={item.name}
                                   onSave={(value) =>
-                                    updateClassFeatureTextField(
+                                    updateOtherTraitTextField(
                                       item.id,
                                       "name",
                                       value,
@@ -3485,46 +3643,55 @@ export default function CampaignPlayPage() {
 
                                 <EditableText
                                   value={item.description || ""}
-                                  placeholder="Opis cechy."
+                                  placeholder="Opis biegłości albo języka."
                                   multiline
                                   onSave={(value) =>
-                                    updateClassFeatureTextField(
+                                    updateOtherTraitTextField(
                                       item.id,
                                       "description",
                                       value,
                                     )
                                   }
-                                  className="mt-1 block min-h-32 w-full whitespace-pre-wrap rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-left text-sm text-neutral-300"
-                                  inputClassName="mt-1 min-h-32 w-full rounded-lg border border-red-700 bg-neutral-900 p-3 text-sm"
+                                  className="mt-1 block min-h-28 w-full whitespace-pre-wrap rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-left text-sm text-neutral-300"
+                                  inputClassName="mt-1 min-h-28 w-full rounded-lg border border-red-700 bg-neutral-900 p-3 text-sm"
                                 />
                               </div>
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </section>
-
-                <section className="grid h-[520px] grid-rows-[auto_auto_minmax(0,1fr)] rounded-xl border border-neutral-700 bg-neutral-800 p-4">
+                            </article>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                </div>
+              ) : null}
+              {characterTab === "inventory" ? (
+                <section className="mt-6 grid h-[640px] grid-rows-[auto_auto_minmax(0,1fr)] rounded-xl border border-neutral-700 bg-neutral-800 p-4">
                   <div>
                     <h3 className="text-center text-2xl font-bold">
-                      Inne biegłości i języki
+                      Ekwipunek
                     </h3>
 
                     <p className="mt-1 text-center text-sm text-neutral-400">
-                      Języki, narzędzia, specjalne biegłości i wiedza postaci.
+                      Przedmioty postaci, ilości, opisy i grafiki.
                     </p>
                   </div>
 
                   <form
-                    onSubmit={addOtherTrait}
-                    className="mt-4 grid gap-2 rounded-xl border border-neutral-700 bg-neutral-900 p-3 xl:grid-cols-[1fr_auto]"
+                    onSubmit={addInventoryItem}
+                    className="mt-4 grid gap-2 rounded-xl border border-neutral-700 bg-neutral-900 p-3 xl:grid-cols-[1fr_110px_auto]"
                   >
                     <input
-                      name="otherTraitName"
+                      name="itemName"
                       required
-                      placeholder="Nazwa, np. Język ludu Estron"
+                      placeholder="Nazwa, np. Mikstura leczenia"
+                      className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
+                    />
+
+                    <input
+                      name="itemQuantity"
+                      type="number"
+                      min={0}
+                      defaultValue={1}
                       className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
                     />
 
@@ -3536,68 +3703,163 @@ export default function CampaignPlayPage() {
                     </button>
 
                     <textarea
-                      name="otherTraitDescription"
-                      placeholder="Opis biegłości, języka albo wiedzy"
-                      className="min-h-20 rounded-lg border border-neutral-700 bg-neutral-950 p-2 xl:col-span-2"
+                      name="itemDescription"
+                      placeholder="Opis przedmiotu"
+                      className="h-16 max-h-16 min-h-16 resize-none overflow-y-auto rounded-lg border border-neutral-700 bg-neutral-950 p-2 xl:col-span-3"
                     />
                   </form>
 
-                  <div className="min-h-0 overflow-y-auto pr-2 pt-4">
-                    {otherTraits.length === 0 ? (
+                  <div className="min-h-0 overflow-y-auto overscroll-contain pr-2 pt-4">
+                    {inventory.length === 0 ? (
                       <p className="rounded-xl border border-dashed border-neutral-700 p-6 text-center text-sm text-neutral-500">
-                        Brak innych biegłości i języków.
+                        Brak przedmiotów w ekwipunku.
                       </p>
                     ) : (
-                      <div className="grid gap-4">
-                        {otherTraits.map((item) => (
+                      <div className="grid gap-4 2xl:grid-cols-2">
+                        {inventory.map((item) => (
                           <article
                             key={item.id}
-                            className="relative rounded-xl border border-red-950/80 bg-neutral-950 p-3"
+                            className="relative h-[380px] min-w-0 overflow-hidden rounded-xl border border-red-950/80 bg-neutral-950 p-3"
                           >
                             <button
                               type="button"
-                              onClick={() => removeOtherTrait(item.id)}
-                              className="absolute right-3 top-3 rounded border border-red-900 bg-red-950/50 px-2 py-1 text-xs text-red-200"
+                              onClick={() => removeInventoryItem(item.id)}
+                              className="absolute right-3 top-3 z-10 rounded border border-red-900 bg-red-950/50 px-2 py-1 text-xs text-red-200"
                             >
                               x
                             </button>
 
-                            <div className="min-w-0 pr-8">
-                              <p className="text-xs font-semibold text-neutral-400">
-                                Nazwa
-                              </p>
+                            <div className="grid h-full min-w-0 gap-4 pr-8 lg:grid-cols-[200px_minmax(0,1fr)]">
+                              <div className="min-w-0">
+                                <div
+                                  onContextMenu={(event) => {
+                                    event.preventDefault();
 
-                              <EditableText
-                                value={item.name}
-                                onSave={(value) =>
-                                  updateOtherTraitTextField(
-                                    item.id,
-                                    "name",
-                                    value,
-                                  )
-                                }
-                                className="mt-1 block w-full rounded-lg border border-neutral-700 bg-neutral-900 p-2 text-left font-bold"
-                                inputClassName="mt-1 w-full rounded-lg border border-red-700 bg-neutral-900 p-2 font-bold"
-                              />
+                                    if (!canEdit) {
+                                      return;
+                                    }
 
-                              <p className="mt-3 text-xs font-semibold text-neutral-400">
-                                Opis
-                              </p>
+                                    setImagePickerTarget({
+                                      type: "inventory",
+                                      id: item.id,
+                                    });
+                                  }}
+                                  title={
+                                    canEdit
+                                      ? "Kliknij prawym przyciskiem myszy, aby zmienić grafikę"
+                                      : "Nie masz uprawnień do edycji grafiki"
+                                  }
+                                  className="overflow-hidden rounded-lg border border-neutral-700 bg-neutral-900"
+                                >
+                                  {item.imageUrl ? (
+                                    <img
+                                      src={item.imageUrl}
+                                      alt={item.name}
+                                      className="aspect-square w-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="flex aspect-square items-center justify-center text-6xl">
+                                      🎒
+                                    </div>
+                                  )}
+                                </div>
 
-                              <EditableText
-                                value={item.description || ""}
-                                placeholder="Opis biegłości albo języka."
-                                multiline
-                                onSave={(value) =>
-                                  updateOtherTraitTextField(
-                                    item.id,
-                                    "description",
-                                    value,
-                                  )
-                                }
-                                className="mt-1 block min-h-28 w-full whitespace-pre-wrap rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-left text-sm text-neutral-300"
-                                inputClassName="mt-1 min-h-28 w-full rounded-lg border border-red-700 bg-neutral-900 p-3 text-sm"
-                              />
+                                <p className="mt-2 text-center text-xs text-neutral-500">
+                                  {canEdit
+                                    ? "Prawy klik: zmień grafikę"
+                                    : "Tryb podglądu: grafika jest tylko do odczytu"}
+                                </p>
+                              </div>
+
+                              <div className="grid min-h-0 min-w-0 grid-rows-[auto_auto_minmax(0,1fr)]">
+                                <div className="min-w-0">
+                                  <p className="text-xs font-semibold text-neutral-400">
+                                    Nazwa
+                                  </p>
+
+                                  <EditableText
+                                    value={item.name}
+                                    onSave={(value) =>
+                                      updateInventoryItemTextField(
+                                        item.id,
+                                        "name",
+                                        value,
+                                      )
+                                    }
+                                    className="mt-1 block h-11 max-h-11 min-h-11 w-full overflow-y-auto break-all rounded-lg border border-neutral-700 bg-neutral-900 p-2 text-left font-bold"
+                                    inputClassName="mt-1 h-11 max-h-11 min-h-11 w-full resize-none overflow-y-auto rounded-lg border border-red-700 bg-neutral-900 p-2 font-bold"
+                                  />
+                                </div>
+
+                                <div className="mt-3">
+                                  <p className="text-xs font-semibold text-neutral-400">
+                                    Ilość
+                                  </p>
+
+                                  <div className="mt-1 flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        changeInventoryItemQuantity(item.id, -1)
+                                      }
+                                      className="rounded-lg border border-neutral-600 px-3 py-1 font-bold"
+                                    >
+                                      -
+                                    </button>
+
+                                    <EditableNumber
+                                      value={item.quantity}
+                                      min={0}
+                                      onSave={(value) =>
+                                        updateInventoryItemQuantity(
+                                          item.id,
+                                          value,
+                                        )
+                                      }
+                                      className="min-w-14 rounded-lg border border-neutral-600 bg-neutral-900 px-3 py-1 text-center font-bold"
+                                      inputClassName="w-20 rounded-lg border border-red-700 bg-neutral-900 px-3 py-1 text-center font-bold"
+                                    />
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        changeInventoryItemQuantity(item.id, 1)
+                                      }
+                                      className="rounded-lg border border-neutral-600 px-3 py-1 font-bold"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="mt-3 min-h-0">
+                                  <p className="text-xs font-semibold text-neutral-400">
+                                    Opis
+                                  </p>
+
+                                  <textarea
+                                    defaultValue={item.description || ""}
+                                    placeholder="Opis przedmiotu."
+                                    wrap="soft"
+                                    onBlur={(event) =>
+                                      updateInventoryItemTextField(
+                                        item.id,
+                                        "description",
+                                        event.currentTarget.value,
+                                      )
+                                    }
+                                    onKeyDown={(event) => {
+                                      if (
+                                        event.key === "Enter" &&
+                                        (event.ctrlKey || event.metaKey)
+                                      ) {
+                                        event.currentTarget.blur();
+                                      }
+                                    }}
+                                    className="mt-1 h-[170px] max-h-[170px] min-h-[170px] w-full resize-none overflow-y-auto break-all rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-sm text-neutral-300 outline-none focus:border-red-700"
+                                  />
+                                </div>
+                              </div>
                             </div>
                           </article>
                         ))}
@@ -3605,208 +3867,8 @@ export default function CampaignPlayPage() {
                     )}
                   </div>
                 </section>
-              </div>
-            ) : null}
-            {characterTab === "inventory" ? (
-              <section className="mt-6 grid h-[640px] grid-rows-[auto_auto_minmax(0,1fr)] rounded-xl border border-neutral-700 bg-neutral-800 p-4">
-                <div>
-                  <h3 className="text-center text-2xl font-bold">Ekwipunek</h3>
-
-                  <p className="mt-1 text-center text-sm text-neutral-400">
-                    Przedmioty postaci, ilości, opisy i grafiki.
-                  </p>
-                </div>
-
-                <form
-                  onSubmit={addInventoryItem}
-                  className="mt-4 grid gap-2 rounded-xl border border-neutral-700 bg-neutral-900 p-3 xl:grid-cols-[1fr_110px_auto]"
-                >
-                  <input
-                    name="itemName"
-                    required
-                    placeholder="Nazwa, np. Mikstura leczenia"
-                    className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
-                  />
-
-                  <input
-                    name="itemQuantity"
-                    type="number"
-                    min={0}
-                    defaultValue={1}
-                    className="rounded-lg border border-neutral-700 bg-neutral-950 p-2"
-                  />
-
-                  <button
-                    type="submit"
-                    className="rounded-lg border border-red-700 px-4 py-2 font-semibold text-red-500"
-                  >
-                    Dodaj
-                  </button>
-
-                  <textarea
-                    name="itemDescription"
-                    placeholder="Opis przedmiotu"
-                    className="h-16 max-h-16 min-h-16 resize-none overflow-y-auto rounded-lg border border-neutral-700 bg-neutral-950 p-2 xl:col-span-3"
-                  />
-                </form>
-
-                <div className="min-h-0 overflow-y-auto overscroll-contain pr-2 pt-4">
-                  {inventory.length === 0 ? (
-                    <p className="rounded-xl border border-dashed border-neutral-700 p-6 text-center text-sm text-neutral-500">
-                      Brak przedmiotów w ekwipunku.
-                    </p>
-                  ) : (
-                    <div className="grid gap-4 2xl:grid-cols-2">
-                      {inventory.map((item) => (
-                        <article
-                          key={item.id}
-                          className="relative h-[380px] min-w-0 overflow-hidden rounded-xl border border-red-950/80 bg-neutral-950 p-3"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => removeInventoryItem(item.id)}
-                            className="absolute right-3 top-3 z-10 rounded border border-red-900 bg-red-950/50 px-2 py-1 text-xs text-red-200"
-                          >
-                            x
-                          </button>
-
-                          <div className="grid h-full min-w-0 gap-4 pr-8 lg:grid-cols-[200px_minmax(0,1fr)]">
-                            <div className="min-w-0">
-                              <div
-                                onContextMenu={(event) => {
-                                  event.preventDefault();
-
-                                  if (!canEdit) {
-                                    return;
-                                  }
-
-                                  setImagePickerTarget({
-                                    type: "inventory",
-                                    id: item.id,
-                                  });
-                                }}
-                                title={
-                                  canEdit
-                                    ? "Kliknij prawym przyciskiem myszy, aby zmienić grafikę"
-                                    : "Nie masz uprawnień do edycji grafiki"
-                                }
-                                className="overflow-hidden rounded-lg border border-neutral-700 bg-neutral-900"
-                              >
-                                {item.imageUrl ? (
-                                  <img
-                                    src={item.imageUrl}
-                                    alt={item.name}
-                                    className="aspect-square w-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="flex aspect-square items-center justify-center text-6xl">
-                                    🎒
-                                  </div>
-                                )}
-                              </div>
-
-                              <p className="mt-2 text-center text-xs text-neutral-500">
-                                Prawy klik: zmień grafikę
-                              </p>
-                            </div>
-
-                            <div className="grid min-h-0 min-w-0 grid-rows-[auto_auto_minmax(0,1fr)]">
-                              <div className="min-w-0">
-                                <p className="text-xs font-semibold text-neutral-400">
-                                  Nazwa
-                                </p>
-
-                                <EditableText
-                                  value={item.name}
-                                  onSave={(value) =>
-                                    updateInventoryItemTextField(
-                                      item.id,
-                                      "name",
-                                      value,
-                                    )
-                                  }
-                                  className="mt-1 block h-11 max-h-11 min-h-11 w-full overflow-y-auto break-all rounded-lg border border-neutral-700 bg-neutral-900 p-2 text-left font-bold"
-                                  inputClassName="mt-1 h-11 max-h-11 min-h-11 w-full resize-none overflow-y-auto rounded-lg border border-red-700 bg-neutral-900 p-2 font-bold"
-                                />
-                              </div>
-
-                              <div className="mt-3">
-                                <p className="text-xs font-semibold text-neutral-400">
-                                  Ilość
-                                </p>
-
-                                <div className="mt-1 flex items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      changeInventoryItemQuantity(item.id, -1)
-                                    }
-                                    className="rounded-lg border border-neutral-600 px-3 py-1 font-bold"
-                                  >
-                                    -
-                                  </button>
-
-                                  <EditableNumber
-                                    value={item.quantity}
-                                    min={0}
-                                    onSave={(value) =>
-                                      updateInventoryItemQuantity(
-                                        item.id,
-                                        value,
-                                      )
-                                    }
-                                    className="min-w-14 rounded-lg border border-neutral-600 bg-neutral-900 px-3 py-1 text-center font-bold"
-                                    inputClassName="w-20 rounded-lg border border-red-700 bg-neutral-900 px-3 py-1 text-center font-bold"
-                                  />
-
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      changeInventoryItemQuantity(item.id, 1)
-                                    }
-                                    className="rounded-lg border border-neutral-600 px-3 py-1 font-bold"
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              </div>
-
-                              <div className="mt-3 min-h-0">
-                                <p className="text-xs font-semibold text-neutral-400">
-                                  Opis
-                                </p>
-
-                                <textarea
-                                  defaultValue={item.description || ""}
-                                  placeholder="Opis przedmiotu."
-                                  wrap="soft"
-                                  onBlur={(event) =>
-                                    updateInventoryItemTextField(
-                                      item.id,
-                                      "description",
-                                      event.currentTarget.value,
-                                    )
-                                  }
-                                  onKeyDown={(event) => {
-                                    if (
-                                      event.key === "Enter" &&
-                                      (event.ctrlKey || event.metaKey)
-                                    ) {
-                                      event.currentTarget.blur();
-                                    }
-                                  }}
-                                  className="mt-1 h-[170px] max-h-[170px] min-h-[170px] w-full resize-none overflow-y-auto break-all rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-sm text-neutral-300 outline-none focus:border-red-700"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </section>
-            ) : null}
+              ) : null}
+            </div>
           </section>
         </section>
       </div>
