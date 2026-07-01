@@ -53,6 +53,7 @@ function formatDate(dateText: string) {
 export default function OnlineImagesPage() {
   const [images, setImages] = useState<ImageAsset[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isAppAdmin, setIsAppAdmin] = useState(false);
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState("misc");
@@ -97,9 +98,19 @@ export default function OnlineImagesPage() {
 
     if (!userData.user) {
       setImages([]);
+      setIsAppAdmin(false);
       setStatus("Musisz być zalogowany, żeby korzystać z biblioteki grafik.");
       setIsLoading(false);
       return;
+    }
+
+    const { data: adminData, error: adminError } =
+      await supabase.rpc("is_app_admin");
+
+    if (adminError) {
+      setIsAppAdmin(false);
+    } else {
+      setIsAppAdmin(Boolean(adminData));
     }
 
     const { data, error } = await supabase
@@ -120,7 +131,7 @@ export default function OnlineImagesPage() {
   }
 
   useEffect(() => {
-    loadImages();
+    void loadImages();
   }, []);
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -235,8 +246,12 @@ export default function OnlineImagesPage() {
       return;
     }
 
-    if (image.uploaded_by !== userId) {
-      setStatus("Możesz usuwać tylko grafiki, które sam dodałeś.");
+    const canDelete = image.uploaded_by === userId || isAppAdmin;
+
+    if (!canDelete) {
+      setStatus(
+        "Możesz usuwać tylko swoje grafiki. Admin aplikacji może usuwać wszystkie.",
+      );
       return;
     }
 
@@ -314,6 +329,13 @@ export default function OnlineImagesPage() {
                 Tu dodajesz grafiki dostępne dla kampanii online: portrety,
                 przedmioty, bronie, czary, lokacje i symbole.
               </p>
+
+              {isAppAdmin ? (
+                <p className="mt-4 inline-block rounded-lg border border-yellow-700 bg-yellow-950/30 px-3 py-2 text-sm font-semibold text-yellow-300">
+                  Tryb admina aplikacji: możesz usuwać grafiki dodane przez
+                  innych użytkowników.
+                </p>
+              ) : null}
             </div>
 
             <AuthPanel />
@@ -391,7 +413,8 @@ export default function OnlineImagesPage() {
                 <h2 className="text-2xl font-bold">Grafiki</h2>
 
                 <p className="mt-1 text-sm text-neutral-400">
-                  Możesz usunąć tylko te grafiki, które sam dodałeś.
+                  Zwykły użytkownik może usuwać swoje grafiki. Admin aplikacji
+                  może usuwać wszystkie.
                 </p>
               </div>
 
@@ -436,7 +459,8 @@ export default function OnlineImagesPage() {
             ) : (
               <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {filteredImages.map((image) => {
-                  const canDelete = image.uploaded_by === userId;
+                  const isOwnImage = image.uploaded_by === userId;
+                  const canDelete = isOwnImage || isAppAdmin;
 
                   return (
                     <article
@@ -474,6 +498,13 @@ export default function OnlineImagesPage() {
                         <p className="mt-3 text-xs text-neutral-500">
                           Dodano: {formatDate(image.created_at)}
                         </p>
+
+                        {isAppAdmin && !isOwnImage ? (
+                          <p className="mt-3 rounded-lg border border-yellow-800 bg-yellow-950/20 p-2 text-xs text-yellow-300">
+                            Grafika innego użytkownika. Usuwasz ją jako admin
+                            aplikacji.
+                          </p>
+                        ) : null}
 
                         {canDelete ? (
                           <button
