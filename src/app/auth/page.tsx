@@ -113,14 +113,6 @@ export default function AuthPage() {
           {mode === "login" ? "Logowanie" : "Rejestracja"}
         </h1>
 
-        <p className="mt-2 text-sm text-neutral-400">
-          Po zalogowaniu wrócisz tutaj:
-        </p>
-
-        <p className="mt-1 rounded-lg border border-neutral-700 bg-neutral-950 p-2 text-sm text-red-400">
-          {redirectPath}
-        </p>
-
         <div className="mt-6 grid grid-cols-2 gap-2">
           <button
             type="button"
