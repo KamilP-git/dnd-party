@@ -8,6 +8,15 @@ import { createClient } from "@/lib/supabase/client";
 export function AuthPanel() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loginHref, setLoginHref] = useState("/auth");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+
+      setLoginHref(`/auth?next=${encodeURIComponent(currentPath)}`);
+    }
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -51,7 +60,7 @@ export function AuthPanel() {
   if (!user) {
     return (
       <Link
-        href="/auth"
+        href={loginHref}
         className="rounded-lg border border-red-700 px-4 py-2 text-sm font-semibold text-red-500"
       >
         Zaloguj się
