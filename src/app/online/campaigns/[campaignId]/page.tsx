@@ -148,6 +148,9 @@ export default function OnlineCampaignLobbyPage() {
   const [isCreatingCharacter, setIsCreatingCharacter] = useState(false);
   const [isRolling, setIsRolling] = useState(false);
   const [isChangingRole, setIsChangingRole] = useState(false);
+  const [removingMemberUserId, setRemovingMemberUserId] = useState<
+    string | null
+  >(null);
 
   const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
 
@@ -309,7 +312,7 @@ export default function OnlineCampaignLobbyPage() {
   }
 
   useEffect(() => {
-    loadCampaignLobby();
+    void loadCampaignLobby();
   }, [campaignId]);
 
   function addDiceRollToHistory(newRoll: DiceRoll) {
@@ -428,7 +431,9 @@ export default function OnlineCampaignLobbyPage() {
           }
 
           setRealtimeStatus(
-            `Realtime: wyczyszczono rzuty ${new Date().toLocaleTimeString("pl-PL")}`,
+            `Realtime: wyczyszczono rzuty ${new Date().toLocaleTimeString(
+              "pl-PL",
+            )}`,
           );
         },
       )
@@ -521,6 +526,62 @@ export default function OnlineCampaignLobbyPage() {
 
     setStatus("Rola członka kampanii została zmieniona.");
     setIsChangingRole(false);
+
+    await loadCampaignMembers();
+  }
+
+  async function removeCampaignMember(memberToRemove: CampaignMember) {
+    if (!isCampaignOwner) {
+      setStatus("Tylko właściciel kampanii może usuwać członków.");
+      return;
+    }
+
+    if (memberToRemove.role === "owner") {
+      setStatus("Nie można usunąć właściciela kampanii.");
+      return;
+    }
+
+    if (memberToRemove.user_id === userId) {
+      setStatus("Nie możesz usunąć samego siebie z kampanii.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Czy na pewno chcesz usunąć użytkownika „${
+        memberToRemove.display_name || "Bez nazwy"
+      }” z kampanii? Jego postacie zostaną w kampanii, ale straci do nich dostęp.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setRemovingMemberUserId(memberToRemove.user_id);
+    setStatus("Usuwam członka z kampanii...");
+
+    const supabase = createClient();
+
+    const { error } = await supabase.rpc("remove_campaign_member", {
+      campaign_id_to_update: campaignId,
+      user_id_to_remove: memberToRemove.user_id,
+    });
+
+    if (error) {
+      setStatus(`Nie udało się usunąć członka kampanii: ${error.message}`);
+      setRemovingMemberUserId(null);
+      return;
+    }
+
+    setMembers((currentMembers) =>
+      currentMembers.filter(
+        (member) => member.user_id !== memberToRemove.user_id,
+      ),
+    );
+
+    setStatus(
+      "Członek został usunięty z kampanii. Jego postacie zostały w kampanii.",
+    );
+    setRemovingMemberUserId(null);
 
     await loadCampaignMembers();
   }
@@ -693,14 +754,6 @@ export default function OnlineCampaignLobbyPage() {
     setIsRolling(false);
   }
 
-  async function handleCustomRoll(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    await makeRoll(formula, reason);
-
-    setReason("");
-  }
-
   async function deleteDiceRoll(rollToDelete: DiceRoll) {
     if (!userId) {
       setStatus("Musisz być zalogowany, żeby usuwać rzuty.");
@@ -837,6 +890,14 @@ export default function OnlineCampaignLobbyPage() {
     });
 
     setStatus("Cała historia rzutów została wyczyszczona.");
+  }
+
+  async function handleCustomRoll(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    await makeRoll(formula, reason);
+
+    setReason("");
   }
 
   if (isLoading) {
@@ -1006,7 +1067,7 @@ export default function OnlineCampaignLobbyPage() {
           ) : (
             <div className="mt-5 grid gap-3">
               {members.map((member) => {
-                const canChangeThisMember =
+                const canManageThisMember =
                   isCampaignOwner &&
                   member.user_id !== userId &&
                   member.role !== "owner";
@@ -1036,7 +1097,7 @@ export default function OnlineCampaignLobbyPage() {
                           {getRoleLabel(member.role)}
                         </span>
 
-                        {canChangeThisMember ? (
+                        {canManageThisMember ? (
                           member.role === "game_master" ? (
                             <button
                               type="button"
@@ -1066,6 +1127,19 @@ export default function OnlineCampaignLobbyPage() {
                               Nadaj Game Mastera
                             </button>
                           )
+                        ) : null}
+
+                        {canManageThisMember ? (
+                          <button
+                            type="button"
+                            disabled={removingMemberUserId === member.user_id}
+                            onClick={() => removeCampaignMember(member)}
+                            className="rounded-lg border border-red-900 px-3 py-2 text-sm font-semibold text-red-400 hover:bg-red-950/30 disabled:cursor-not-allowed disabled:text-neutral-600"
+                          >
+                            {removingMemberUserId === member.user_id
+                              ? "Usuwam..."
+                              : "Usuń z kampanii"}
+                          </button>
                         ) : null}
                       </div>
                     </div>
@@ -1276,6 +1350,7 @@ export default function OnlineCampaignLobbyPage() {
                 ) : null}
               </div>
             </div>
+
             {diceRolls.length === 0 ? (
               <p className="mt-5 text-neutral-400">
                 Nie ma jeszcze żadnych rzutów online.
