@@ -362,6 +362,77 @@ export default function OnlineCampaignLobbyPage() {
         },
       )
       .on(
+        "broadcast",
+        {
+          event: "delete-roll",
+        },
+        (payload) => {
+          const deletedRoll = payload.payload as
+            | {
+                campaign_id?: string;
+                roll_id?: string;
+              }
+            | undefined;
+
+          if (!deletedRoll) {
+            return;
+          }
+
+          if (deletedRoll.campaign_id !== campaignId) {
+            return;
+          }
+
+          if (!deletedRoll.roll_id) {
+            return;
+          }
+
+          setDiceRolls((currentRolls) =>
+            currentRolls.filter((roll) => roll.id !== deletedRoll.roll_id),
+          );
+
+          setRealtimeStatus(
+            `Realtime: usunięto rzut ${new Date().toLocaleTimeString("pl-PL")}`,
+          );
+        },
+      )
+      .on(
+        "broadcast",
+        {
+          event: "clear-rolls",
+        },
+        (payload) => {
+          const clearData = payload.payload as
+            | {
+                campaign_id?: string;
+                mode?: "all" | "user";
+                user_id?: string;
+              }
+            | undefined;
+
+          if (!clearData) {
+            return;
+          }
+
+          if (clearData.campaign_id !== campaignId) {
+            return;
+          }
+
+          if (clearData.mode === "all") {
+            setDiceRolls([]);
+          }
+
+          if (clearData.mode === "user" && clearData.user_id) {
+            setDiceRolls((currentRolls) =>
+              currentRolls.filter((roll) => roll.user_id !== clearData.user_id),
+            );
+          }
+
+          setRealtimeStatus(
+            `Realtime: wyczyszczono rzuty ${new Date().toLocaleTimeString("pl-PL")}`,
+          );
+        },
+      )
+      .on(
         "postgres_changes",
         {
           event: "INSERT",
@@ -628,6 +699,144 @@ export default function OnlineCampaignLobbyPage() {
     await makeRoll(formula, reason);
 
     setReason("");
+  }
+
+  async function deleteDiceRoll(rollToDelete: DiceRoll) {
+    if (!userId) {
+      setStatus("Musisz być zalogowany, żeby usuwać rzuty.");
+      return;
+    }
+
+    const canDelete = rollToDelete.user_id === userId || isCampaignOwner;
+
+    if (!canDelete) {
+      setStatus("Możesz usunąć tylko swoje rzuty.");
+      return;
+    }
+
+    const confirmed = window.confirm("Czy na pewno chcesz usunąć ten rzut?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    setStatus("Usuwam rzut...");
+
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from("dice_rolls")
+      .delete()
+      .eq("id", rollToDelete.id)
+      .eq("campaign_id", campaignId);
+
+    if (error) {
+      setStatus(`Nie udało się usunąć rzutu: ${error.message}`);
+      return;
+    }
+
+    setDiceRolls((currentRolls) =>
+      currentRolls.filter((roll) => roll.id !== rollToDelete.id),
+    );
+
+    await realtimeChannelRef.current?.send({
+      type: "broadcast",
+      event: "delete-roll",
+      payload: {
+        campaign_id: campaignId,
+        roll_id: rollToDelete.id,
+      },
+    });
+
+    setStatus("Rzut został usunięty.");
+  }
+
+  async function clearMyDiceRolls() {
+    if (!userId) {
+      setStatus("Musisz być zalogowany, żeby czyścić rzuty.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Czy na pewno chcesz usunąć wszystkie swoje rzuty z tej kampanii?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setStatus("Usuwam Twoje rzuty...");
+
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from("dice_rolls")
+      .delete()
+      .eq("campaign_id", campaignId)
+      .eq("user_id", userId);
+
+    if (error) {
+      setStatus(`Nie udało się usunąć Twoich rzutów: ${error.message}`);
+      return;
+    }
+
+    setDiceRolls((currentRolls) =>
+      currentRolls.filter((roll) => roll.user_id !== userId),
+    );
+
+    await realtimeChannelRef.current?.send({
+      type: "broadcast",
+      event: "clear-rolls",
+      payload: {
+        campaign_id: campaignId,
+        mode: "user",
+        user_id: userId,
+      },
+    });
+
+    setStatus("Twoje rzuty zostały usunięte.");
+  }
+
+  async function clearCampaignDiceRolls() {
+    if (!isCampaignOwner) {
+      setStatus("Tylko właściciel kampanii może wyczyścić całą historię.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Czy na pewno chcesz usunąć CAŁĄ historię rzutów w tej kampanii?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setStatus("Usuwam całą historię rzutów...");
+
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from("dice_rolls")
+      .delete()
+      .eq("campaign_id", campaignId);
+
+    if (error) {
+      setStatus(`Nie udało się wyczyścić historii: ${error.message}`);
+      return;
+    }
+
+    setDiceRolls([]);
+
+    await realtimeChannelRef.current?.send({
+      type: "broadcast",
+      event: "clear-rolls",
+      payload: {
+        campaign_id: campaignId,
+        mode: "all",
+      },
+    });
+
+    setStatus("Cała historia rzutów została wyczyszczona.");
   }
 
   if (isLoading) {
@@ -1037,8 +1246,36 @@ export default function OnlineCampaignLobbyPage() {
           </aside>
 
           <section className="rounded-2xl border border-neutral-700 bg-neutral-900 p-6">
-            <h2 className="text-2xl font-bold">Historia rzutów online</h2>
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Historia rzutów online</h2>
 
+                <p className="mt-1 text-sm text-neutral-400">
+                  Możesz usuwać swoje rzuty. Właściciel kampanii może wyczyścić
+                  całą historię.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={clearMyDiceRolls}
+                  className="rounded-lg border border-neutral-700 px-3 py-2 text-sm font-semibold text-neutral-300 hover:border-neutral-500"
+                >
+                  Wyczyść moje rzuty
+                </button>
+
+                {isCampaignOwner ? (
+                  <button
+                    type="button"
+                    onClick={clearCampaignDiceRolls}
+                    className="rounded-lg border border-red-900 px-3 py-2 text-sm font-semibold text-red-400 hover:bg-red-950/30"
+                  >
+                    Wyczyść wszystko
+                  </button>
+                ) : null}
+              </div>
+            </div>
             {diceRolls.length === 0 ? (
               <p className="mt-5 text-neutral-400">
                 Nie ma jeszcze żadnych rzutów online.
@@ -1074,9 +1311,21 @@ export default function OnlineCampaignLobbyPage() {
                         </p>
                       </div>
 
-                      <p className="text-4xl font-black text-red-500">
-                        {roll.total}
-                      </p>
+                      <div className="flex shrink-0 flex-col items-end gap-3">
+                        <p className="text-4xl font-black text-red-500">
+                          {roll.total}
+                        </p>
+
+                        {roll.user_id === userId || isCampaignOwner ? (
+                          <button
+                            type="button"
+                            onClick={() => deleteDiceRoll(roll)}
+                            className="rounded-lg border border-red-900 px-3 py-1 text-xs font-semibold text-red-400 hover:bg-red-950/30"
+                          >
+                            Usuń
+                          </button>
+                        ) : null}
+                      </div>
                     </div>
                   </article>
                 ))}
