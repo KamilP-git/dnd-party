@@ -43,16 +43,41 @@ export default function AccountPage() {
       .from("profiles")
       .select("*")
       .eq("id", userData.user.id)
-      .single();
+      .maybeSingle();
 
-    if (profileError || !profileData) {
+    if (profileError) {
       setProfile(null);
       setDisplayName("");
-      setStatus(
-        `Nie udało się pobrać profilu: ${
-          profileError?.message ?? "brak danych"
-        }`,
-      );
+      setStatus(`Nie udało się pobrać profilu: ${profileError.message}`);
+      setIsLoading(false);
+      return;
+    }
+
+    if (!profileData) {
+      const { data: insertedProfile, error: insertError } = await supabase
+        .from("profiles")
+        .insert({
+          id: userData.user.id,
+          display_name: userData.user.email?.split("@")[0] ?? "Gracz",
+        })
+        .select("*")
+        .single();
+
+      if (insertError || !insertedProfile) {
+        setProfile(null);
+        setDisplayName("");
+        setStatus(
+          `Nie udało się utworzyć profilu: ${
+            insertError?.message ?? "brak danych"
+          }`,
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      setProfile(insertedProfile as Profile);
+      setDisplayName(insertedProfile.display_name ?? "");
+      setStatus("Konto zostało wczytane.");
       setIsLoading(false);
       return;
     }
