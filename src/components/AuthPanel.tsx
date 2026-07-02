@@ -19,44 +19,84 @@ export function AuthPanel() {
     }
   }, []);
 
-  async function loadProfile(userId: string) {
-    const supabase = createClient();
+  async function loadDisplayName(userId: string) {
+    try {
+      const supabase = createClient();
 
-    const { data } = await supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", userId)
-      .single();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", userId)
+        .maybeSingle();
 
-    setDisplayName(data?.display_name ?? "");
+      if (error) {
+        setDisplayName("");
+        return;
+      }
+
+      setDisplayName(data?.display_name ?? "");
+    } catch {
+      setDisplayName("");
+    }
   }
 
   useEffect(() => {
-    const supabase = createClient();
+    let isActive = true;
+
+    const fallbackTimer = window.setTimeout(() => {
+      if (isActive) {
+        setIsLoading(false);
+      }
+    }, 4000);
 
     async function loadUser() {
-      const { data } = await supabase.auth.getUser();
+      try {
+        const supabase = createClient();
 
-      setUser(data.user);
+        const { data } = await supabase.auth.getUser();
 
-      if (data.user) {
-        await loadProfile(data.user.id);
-      } else {
-        setDisplayName("");
+        if (!isActive) {
+          return;
+        }
+
+        const currentUser = data.user ?? null;
+
+        setUser(currentUser);
+
+        if (currentUser) {
+          await loadDisplayName(currentUser.id);
+        } else {
+          setDisplayName("");
+        }
+      } catch {
+        if (isActive) {
+          setUser(null);
+          setDisplayName("");
+        }
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
+        }
       }
-
-      setIsLoading(false);
     }
 
-    loadUser();
+    void loadUser();
+
+    const supabase = createClient();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user ?? null);
+      if (!isActive) {
+        return;
+      }
 
-      if (session?.user) {
-        await loadProfile(session.user.id);
+      const currentUser = session?.user ?? null;
+
+      setUser(currentUser);
+
+      if (currentUser) {
+        await loadDisplayName(currentUser.id);
       } else {
         setDisplayName("");
       }
@@ -65,6 +105,8 @@ export function AuthPanel() {
     });
 
     return () => {
+      isActive = false;
+      window.clearTimeout(fallbackTimer);
       subscription.unsubscribe();
     };
   }, []);
@@ -73,8 +115,10 @@ export function AuthPanel() {
     const supabase = createClient();
 
     await supabase.auth.signOut();
+
     setUser(null);
     setDisplayName("");
+    setIsLoading(false);
   }
 
   if (isLoading) {
