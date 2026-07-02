@@ -62,6 +62,25 @@ type DiceRoll = {
   total: number;
   created_at: string;
 };
+type DiceType = 4 | 6 | 8 | 10 | 12 | 20;
+
+type DicePoolItem = {
+  sides: DiceType;
+  count: number;
+};
+
+const diceTypes: {
+  sides: DiceType;
+  label: string;
+  icon: string;
+}[] = [
+  { sides: 4, label: "D4", icon: "△" },
+  { sides: 6, label: "D6", icon: "□" },
+  { sides: 8, label: "D8", icon: "◇" },
+  { sides: 10, label: "D10", icon: "⬟" },
+  { sides: 12, label: "D12", icon: "⬢" },
+  { sides: 20, label: "D20", icon: "✦" },
+];
 
 function rollDie(sides: number) {
   return Math.floor(Math.random() * sides) + 1;
@@ -143,7 +162,8 @@ export default function OnlineCampaignLobbyPage() {
   const [selectedCharacterId, setSelectedCharacterId] = useState("");
   const [formula, setFormula] = useState("1d20");
   const [reason, setReason] = useState("");
-
+  const [dicePool, setDicePool] = useState<DicePoolItem[]>([]);
+  const [diceModifier, setDiceModifier] = useState(0);
   const [status, setStatus] = useState("Ładuję lobby kampanii...");
   const [realtimeStatus, setRealtimeStatus] = useState(
     "Realtime: łączę z Supabase...",
@@ -171,7 +191,7 @@ export default function OnlineCampaignLobbyPage() {
   }, [members, userId]);
 
   const isGameMaster = currentMember?.role === "game_master";
-
+  const canRollAsDm = isCampaignOwner || isGameMaster;
   const myCharacters = useMemo(() => {
     if (!userId) {
       return [];
@@ -259,11 +279,11 @@ export default function OnlineCampaignLobbyPage() {
       },
     );
 
-    if (memberError) {
-      setMembers([]);
-    } else {
-      setMembers((memberData ?? []) as CampaignMember[]);
-    }
+    const loadedMembers = memberError
+      ? []
+      : ((memberData ?? []) as CampaignMember[]);
+
+    setMembers(loadedMembers);
 
     const { data: characterData, error: characterError } = await supabase
       .from("characters")
@@ -301,13 +321,22 @@ export default function OnlineCampaignLobbyPage() {
     setCampaignNotes(campaignData.notes ?? "");
 
     const isOwner = campaignData.owner_id === userData.user.id;
+    const currentLoadedMember =
+      loadedMembers.find((member) => member.user_id === userData.user.id) ??
+      null;
+
+    const canDefaultToDm =
+      isOwner || currentLoadedMember?.role === "game_master";
+
     const firstPlayableCharacter = isOwner
       ? loadedCharacters[0]
       : loadedCharacters.find(
           (character) => character.owner_id === userData.user.id,
         );
 
-    setSelectedCharacterId(firstPlayableCharacter?.id ?? "");
+    setSelectedCharacterId(
+      firstPlayableCharacter?.id ?? (canDefaultToDm ? "dm" : ""),
+    );
 
     setStatus(
       memberError
@@ -748,25 +777,103 @@ export default function OnlineCampaignLobbyPage() {
     setStatus("Postać została usunięta.");
   }
 
-  async function makeRoll(rollFormula: string, rollReason: string) {
+  function addDieToPool(sides: DiceType) {
+    setDicePool((currentPool) => {
+      const existingDie = currentPool.find((item) => item.sides === sides);
+
+      if (existingDie) {
+        return currentPool.map((item) => {
+          if (item.sides === sides) {
+            return {
+              ...item,
+              count: item.count + 1,
+            };
+          }
+
+          return item;
+        });
+      }
+
+      return [
+        ...currentPool,
+        {
+          sides,
+          count: 1,
+        },
+      ];
+    });
+  }
+
+  function changeDicePoolCount(sides: DiceType, change: number) {
+    setDicePool((currentPool) =>
+      currentPool
+        .map((item) => {
+          if (item.sides === sides) {
+            return {
+              ...item,
+              count: Math.max(0, item.count + change),
+            };
+          }
+
+          return item;
+        })
+        .filter((item) => item.count > 0),
+    );
+  }
+
+  function clearDicePool() {
+    setDicePool([]);
+    setDiceModifier(0);
+  }
+
+  function getDicePoolFormula(pool: DicePoolItem[], modifier: number) {
+    const dicePart = pool
+      .map((item) => `${item.count}d${item.sides}`)
+      .join("+");
+
+    if (!dicePart) {
+      return modifier === 0
+        ? "Brak kości"
+        : `${modifier >= 0 ? "+" : ""}${modifier}`;
+    }
+
+    if (modifier === 0) {
+      return dicePart;
+    }
+
+    return `${dicePart}${modifier >= 0 ? "+" : ""}${modifier}`;
+  }
+
+  function getDicePoolTiles(pool: DicePoolItem[]) {
+    return pool.flatMap((item) =>
+      Array.from({ length: item.count }, (_, index) => ({
+        sides: item.sides,
+        key: `${item.sides}-${index}`,
+      })),
+    );
+  }
+
+  async function saveDiceRoll(
+    rollFormula: string,
+    rollReason: string,
+    rolls: number[],
+    modifier: number,
+    total: number,
+  ) {
     if (!userId) {
       setStatus("Musisz być zalogowany, żeby rzucać online.");
       return;
     }
 
+    const isDmRoll =
+      selectedCharacterId === "dm" || (canRollAsDm && !selectedCharacterId);
+
     const selectedCharacter = playableCharacters.find(
       (character) => character.id === selectedCharacterId,
     );
 
-    if (!selectedCharacter) {
-      setStatus("Najpierw wybierz postać, która wykonuje rzut.");
-      return;
-    }
-
-    const rollResult = parseAndRollFormula(rollFormula);
-
-    if (!rollResult) {
-      setStatus("Niepoprawny zapis rzutu. Użyj np. 1d20, 2d6+3 albo 1d8-1.");
+    if (!selectedCharacter && !isDmRoll) {
+      setStatus("Najpierw wybierz postać albo rzuć jako DM.");
       return;
     }
 
@@ -779,14 +886,14 @@ export default function OnlineCampaignLobbyPage() {
       .from("dice_rolls")
       .insert({
         campaign_id: campaignId,
-        character_id: selectedCharacter.id,
+        character_id: isDmRoll ? null : selectedCharacter?.id,
         user_id: userId,
-        character_name: selectedCharacter.name,
+        character_name: isDmRoll ? "DM" : (selectedCharacter?.name ?? "Postać"),
         formula: rollFormula,
         reason: rollReason,
-        rolls: rollResult.rolls,
-        modifier: rollResult.modifier,
-        total: rollResult.total,
+        rolls,
+        modifier,
+        total,
       })
       .select("*")
       .single();
@@ -814,6 +921,49 @@ export default function OnlineCampaignLobbyPage() {
       `Realtime: wysłano rzut ${new Date().toLocaleTimeString("pl-PL")}`,
     );
     setIsRolling(false);
+  }
+
+  async function makeRoll(rollFormula: string, rollReason: string) {
+    const rollResult = parseAndRollFormula(rollFormula);
+
+    if (!rollResult) {
+      setStatus("Niepoprawny zapis rzutu. Użyj np. 1d20, 2d6+3 albo 1d8-1.");
+      return;
+    }
+
+    await saveDiceRoll(
+      rollFormula,
+      rollReason,
+      rollResult.rolls,
+      rollResult.modifier,
+      rollResult.total,
+    );
+  }
+
+  async function handleDicePoolRoll(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (dicePool.length === 0) {
+      setStatus("Dodaj przynajmniej jedną kość do stołu.");
+      return;
+    }
+
+    const rolls = dicePool.flatMap((item) =>
+      Array.from({ length: item.count }, () => rollDie(item.sides)),
+    );
+
+    const total =
+      rolls.reduce((sum, currentRoll) => sum + currentRoll, 0) + diceModifier;
+
+    await saveDiceRoll(
+      getDicePoolFormula(dicePool, diceModifier),
+      reason,
+      rolls,
+      diceModifier,
+      total,
+    );
+
+    setReason("");
   }
 
   async function deleteDiceRoll(rollToDelete: DiceRoll) {
@@ -1356,18 +1506,31 @@ export default function OnlineCampaignLobbyPage() {
 
         <section className="mt-6 grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
           <aside className="rounded-2xl border border-neutral-700 bg-neutral-900 p-6">
-            <h2 className="text-2xl font-bold">Rzuty realtime</h2>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-bold">Rzuty realtime</h2>
 
-            <p className="mt-2 text-sm text-neutral-400">
-              Rzuty z lobby i z kart postaci trafiają do tej samej historii.
-            </p>
+                <p className="mt-2 text-sm text-neutral-400">
+                  Lobby używa takiego samego stołu kości jak karta postaci. DM i
+                  Game Master mogą rzucać bez tworzenia postaci.
+                </p>
+              </div>
 
-            {playableCharacters.length === 0 ? (
+              <button
+                type="button"
+                onClick={clearDicePool}
+                className="rounded-lg border border-neutral-700 px-2 py-1 text-xs font-semibold text-neutral-400"
+              >
+                Wyczyść stół
+              </button>
+            </div>
+
+            {!canRollAsDm && playableCharacters.length === 0 ? (
               <p className="mt-5 rounded-xl border border-neutral-700 bg-neutral-950 p-4 text-sm text-neutral-400">
                 Najpierw stwórz postać, żeby rzucać.
               </p>
             ) : (
-              <form onSubmit={handleCustomRoll} className="mt-5 grid gap-4">
+              <form onSubmit={handleDicePoolRoll} className="mt-5 grid gap-4">
                 <label className="grid gap-1 text-sm">
                   Kto rzuca?
                   <select
@@ -1377,6 +1540,10 @@ export default function OnlineCampaignLobbyPage() {
                     }
                     className="rounded-lg border border-neutral-700 bg-neutral-800 p-2"
                   >
+                    {canRollAsDm ? (
+                      <option value="dm">DM / Game Master</option>
+                    ) : null}
+
                     {playableCharacters.map((character) => (
                       <option key={character.id} value={character.id}>
                         {character.name}
@@ -1385,49 +1552,132 @@ export default function OnlineCampaignLobbyPage() {
                   </select>
                 </label>
 
-                <div className="grid grid-cols-3 gap-2">
-                  {["1d4", "1d6", "1d8", "1d10", "1d12", "1d20"].map(
-                    (quickFormula) => (
-                      <button
-                        key={quickFormula}
-                        type="button"
-                        disabled={isRolling}
-                        onClick={() => makeRoll(quickFormula, reason)}
-                        className="rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-3 text-sm font-bold hover:border-red-700 disabled:text-neutral-600"
-                      >
-                        {quickFormula}
-                      </button>
-                    ),
-                  )}
+                <div className="grid grid-cols-6 gap-1">
+                  {diceTypes.map((die) => (
+                    <button
+                      key={die.sides}
+                      type="button"
+                      onClick={() => addDieToPool(die.sides)}
+                      className="flex h-12 flex-col items-center justify-center rounded-lg border border-neutral-700 bg-neutral-800 text-xs font-bold transition hover:border-red-700"
+                    >
+                      <span className="text-base text-red-400">{die.icon}</span>
+                      <span>{die.label}</span>
+                    </button>
+                  ))}
                 </div>
 
-                <label className="grid gap-1 text-sm">
-                  Własny rzut
-                  <input
-                    value={formula}
-                    onChange={(event) => setFormula(event.target.value)}
-                    placeholder="np. 1d20+5"
-                    className="rounded-lg border border-neutral-700 bg-neutral-800 p-2"
-                  />
-                </label>
+                <section className="rounded-xl border border-neutral-700 bg-neutral-950 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-bold">Stół kości</h3>
 
-                <label className="grid gap-1 text-sm">
-                  Powód rzutu
-                  <input
-                    value={reason}
-                    onChange={(event) => setReason(event.target.value)}
-                    placeholder="np. Percepcja, atak, obrażenia"
-                    className="rounded-lg border border-neutral-700 bg-neutral-800 p-2"
-                  />
-                </label>
+                    <p className="text-xs text-neutral-500">
+                      {getDicePoolFormula(dicePool, diceModifier)}
+                    </p>
+                  </div>
+
+                  <div className="mt-2 min-h-[52px] rounded-lg border border-dashed border-neutral-800 bg-black/20 p-1">
+                    {dicePool.length === 0 ? (
+                      <div className="flex h-12 items-center justify-center text-xs text-neutral-500">
+                        Brak kości.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-5 gap-1">
+                        {getDicePoolTiles(dicePool).map((tile) => {
+                          const dieInfo = diceTypes.find(
+                            (die) => die.sides === tile.sides,
+                          );
+
+                          return (
+                            <button
+                              key={tile.key}
+                              type="button"
+                              onClick={() =>
+                                changeDicePoolCount(tile.sides, -1)
+                              }
+                              className="flex h-12 flex-col items-center justify-center rounded-lg border border-neutral-700 bg-neutral-900 p-1 text-center transition hover:border-red-700 hover:bg-red-950/30"
+                              title={`Usuń D${tile.sides}`}
+                            >
+                              <span className="text-base text-red-400">
+                                {dieInfo?.icon ?? "🎲"}
+                              </span>
+
+                              <span className="text-[10px] font-bold">
+                                {dieInfo?.label ?? `D${tile.sides}`}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                <div className="grid gap-2 md:grid-cols-[90px_minmax(0,1fr)]">
+                  <label className="grid gap-1 text-xs">
+                    Mod.
+                    <input
+                      type="number"
+                      value={diceModifier}
+                      onChange={(event) => {
+                        const nextValue = Number(event.target.value);
+
+                        setDiceModifier(
+                          Number.isNaN(nextValue) ? 0 : nextValue,
+                        );
+                      }}
+                      className="rounded-lg border border-neutral-700 bg-neutral-800 p-2"
+                    />
+                  </label>
+
+                  <label className="grid gap-1 text-xs">
+                    Powód rzutu
+                    <input
+                      value={reason}
+                      onChange={(event) => setReason(event.target.value)}
+                      placeholder="np. atak, obrażenia, percepcja"
+                      className="rounded-lg border border-neutral-700 bg-neutral-800 p-2"
+                    />
+                  </label>
+                </div>
 
                 <button
                   type="submit"
-                  disabled={isRolling}
+                  disabled={dicePool.length === 0 || isRolling}
                   className="rounded-lg border border-red-700 px-4 py-2 font-semibold text-red-500 disabled:cursor-not-allowed disabled:border-neutral-700 disabled:text-neutral-600"
                 >
-                  {isRolling ? "Rzucam..." : "Rzuć online"}
+                  {isRolling ? "Rzucam..." : "Rzuć pulą"}
                 </button>
+
+                <details className="rounded-xl border border-neutral-700 bg-neutral-950 p-3">
+                  <summary className="cursor-pointer text-sm font-bold">
+                    Ręczny zapis
+                  </summary>
+
+                  <p className="mt-2 text-xs text-neutral-500">
+                    Dla prostych zapisów, np. 1d20, 2d6+3 albo 1d8-1.
+                  </p>
+
+                  <div className="mt-3 grid gap-2">
+                    <input
+                      value={formula}
+                      onChange={(event) => setFormula(event.target.value)}
+                      placeholder="np. 1d20+5"
+                      className="rounded-lg border border-neutral-700 bg-neutral-900 p-2"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void makeRoll(formula, reason);
+                        setReason("");
+                      }}
+                      disabled={isRolling}
+                      className="rounded-lg border border-neutral-700 px-4 py-2 font-semibold text-neutral-300 disabled:text-neutral-600"
+                    >
+                      Rzuć z zapisu
+                    </button>
+                  </div>
+                </details>
               </form>
             )}
           </aside>
