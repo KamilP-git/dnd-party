@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 
 export function AuthPanel() {
   const [user, setUser] = useState<User | null>(null);
+  const [displayName, setDisplayName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [loginHref, setLoginHref] = useState("/auth");
 
@@ -18,6 +19,18 @@ export function AuthPanel() {
     }
   }, []);
 
+  async function loadProfile(userId: string) {
+    const supabase = createClient();
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", userId)
+      .single();
+
+    setDisplayName(data?.display_name ?? "");
+  }
+
   useEffect(() => {
     const supabase = createClient();
 
@@ -25,6 +38,13 @@ export function AuthPanel() {
       const { data } = await supabase.auth.getUser();
 
       setUser(data.user);
+
+      if (data.user) {
+        await loadProfile(data.user.id);
+      } else {
+        setDisplayName("");
+      }
+
       setIsLoading(false);
     }
 
@@ -32,8 +52,15 @@ export function AuthPanel() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
+
+      if (session?.user) {
+        await loadProfile(session.user.id);
+      } else {
+        setDisplayName("");
+      }
+
       setIsLoading(false);
     });
 
@@ -47,6 +74,7 @@ export function AuthPanel() {
 
     await supabase.auth.signOut();
     setUser(null);
+    setDisplayName("");
   }
 
   if (isLoading) {
@@ -70,10 +98,25 @@ export function AuthPanel() {
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-neutral-700 bg-neutral-950 p-3 sm:flex-row sm:items-center">
-      <p className="text-sm text-neutral-300">
-        Zalogowany jako{" "}
-        <span className="font-semibold text-white">{user.email}</span>
-      </p>
+      <div className="text-sm">
+        <p className="text-neutral-300">
+          Zalogowany jako{" "}
+          <span className="font-semibold text-white">
+            {displayName || user.email}
+          </span>
+        </p>
+
+        {displayName ? (
+          <p className="text-xs text-neutral-500">{user.email}</p>
+        ) : null}
+      </div>
+
+      <Link
+        href="/account"
+        className="rounded-lg border border-neutral-600 px-3 py-2 text-sm font-semibold text-neutral-300 hover:border-neutral-500"
+      >
+        Konto
+      </Link>
 
       <button
         type="button"
